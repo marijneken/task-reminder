@@ -254,7 +254,7 @@
         },
         "message": {
           "name": "Message",
-          "description": "Reminder text; defaults to \"<title> is due\"."
+          "description": "Reminder text. Defaults to the title followed by \"is due\"."
         },
         "due_in": {
           "name": "Due in",
