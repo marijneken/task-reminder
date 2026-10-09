@@ -16,6 +16,7 @@ CONF_PERSON = "person"
 CONF_PHONE_SERVICES = "phone_services"
 CONF_ALEXA_SERVICES = "alexa_services"
 CONF_EXTRA_SERVICES = "extra_services"
+CONF_PAUSE_PLAYERS = "pause_players"
 CONF_QUIET_START = "quiet_start"
 CONF_QUIET_END = "quiet_end"
 

@@ -18,6 +18,7 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_track_point_in_utc_time,
@@ -35,6 +36,7 @@ from .const import (
     ATTR_SORT_DATE,
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
+    CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
     CONF_QUIET_END,
@@ -42,6 +44,7 @@ from .const import (
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DELIVERY_RETRY,
+    DOMAIN,
     EVENT_FINISHED,
     EVENT_MOBILE_ACTION,
     EVENT_TAG_SCANNED,
@@ -156,6 +159,7 @@ class TaskManager:
             self.tasks[task.id] = task
         self.silence = Silence.from_dict(data.get("silence"))
         self.marks = dict(data.get("marks", {}))
+        self._update_notify_issue()
         self._subscribe()
 
     async def async_start(self, _hass: HomeAssistant | None = None) -> None:
@@ -238,6 +242,20 @@ class TaskManager:
         self._unsubs.append(self.hass.bus.async_listen(EVENT_MOBILE_ACTION, self._on_action))
         if any(t.start_tag or t.done_tag for t in self.types.values()):
             self._unsubs.append(self.hass.bus.async_listen(EVENT_TAG_SCANNED, self._on_tag))
+
+    def _update_notify_issue(self) -> None:
+        """Repairs warning while no notify service is configured: reminders would go nowhere."""
+        if self.notifier.configured:
+            ir.async_delete_issue(self.hass, DOMAIN, "no_notify_services")
+            return
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            "no_notify_services",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="no_notify_services",
+        )
 
     # -- persistence & scheduling ----------------------------------------
 
@@ -370,6 +388,8 @@ class TaskManager:
             task.next_at = now + DELIVERY_RETRY
             return
 
+        if plan.extra:
+            await self._pause_media(task)
         task.held_reason = None
         task.status = TaskStatus.NOTIFYING
         task.last_notified_at = now
@@ -461,8 +481,40 @@ class TaskManager:
         self.tasks[task.id] = task
         return task
 
+    async def _pause_media(self, task: Task) -> None:
+        """Pause what is playing, once per task; resumed when the task ends."""
+        if "paused" in task.extra:
+            return
+        players = [
+            p
+            for p in self.settings.get(CONF_PAUSE_PLAYERS, [])
+            if (state := self.hass.states.get(p)) and state.state == "playing"
+        ]
+        task.extra["paused"] = players
+        if players:
+            await self._media_call("media_pause", players)
+
+    async def _resume_media(self, task: Task) -> None:
+        """Resume the players this task paused, unless someone else already did."""
+        players = [
+            p
+            for p in task.extra.get("paused", [])
+            if (state := self.hass.states.get(p)) and state.state == "paused"
+        ]
+        if players:
+            await self._media_call("media_play", players)
+
+    async def _media_call(self, service: str, players: list[str]) -> None:
+        try:
+            await self.hass.services.async_call(
+                "media_player", service, {"entity_id": players}, blocking=True
+            )
+        except Exception:
+            _LOGGER.warning("media_player.%s failed for %s", service, players, exc_info=True)
+
     async def _finish(self, task: Task, outcome: str, *, chain: bool = True) -> None:
         self.tasks.pop(task.id, None)
+        await self._resume_media(task)
         await self.notifier.async_clear(task.id)
         self.hass.bus.async_fire(
             EVENT_FINISHED,

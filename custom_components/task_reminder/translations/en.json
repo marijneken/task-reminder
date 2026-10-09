@@ -10,10 +10,12 @@
           "alexa_services": "Alexa notify services",
           "extra_services": "Other devices notify services",
           "quiet_start": "Quiet hours start",
-          "quiet_end": "Quiet hours end"
+          "quiet_end": "Quiet hours end",
+          "pause_players": "Pause these media players"
         },
         "data_description": {
-          "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off."
+          "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
+          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends."
         }
       }
     },
@@ -31,7 +33,8 @@
           "alexa_services": "Alexa notify services",
           "extra_services": "Other devices notify services",
           "quiet_start": "Quiet hours start",
-          "quiet_end": "Quiet hours end"
+          "quiet_end": "Quiet hours end",
+          "pause_players": "Pause these media players"
         }
       }
     }
@@ -282,6 +285,12 @@
           "description": "Can be ended without doing it. On by default. Done always ends it."
         }
       }
+    }
+  },
+  "issues": {
+    "no_notify_services": {
+      "title": "Task Reminder has no notify services",
+      "description": "No phone, Alexa or other device notify service is configured, so reminders are not delivered. Open the Task Reminder integration, choose Configure and select at least one notify service, for example your phone."
     }
   }
 }

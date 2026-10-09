@@ -27,6 +27,11 @@ updating).
 | 3rd | + other devices |
 | from the (snoozes + 1)th | "keeps going": critical alert on the phone, repeat every few minutes |
 
+Choose media players in the integration settings to have whatever is playing on them paused when a
+reminder reaches the other devices (the 3rd notification); it resumes when the task ends (done, dismissed or
+expired), unless you already resumed it yourself. Dismissable tasks with a fill flag that is off use a lighter
+ladder (phone and Alexa only) and never pause media. If no notify service is configured, a Repairs warning says so.
+
 Snoozes are limited (default 10, 5, 3 minutes); after the last one the Snooze
 button disappears. Quiet hours hold non time-critical reminders, being away
 holds everything after one passive notification, and silencing (with a required

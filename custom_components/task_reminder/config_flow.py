@@ -37,6 +37,7 @@ from .const import (
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
+    CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
     CONF_QUIET_END,
@@ -88,6 +89,9 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Optional(CONF_PHONE_SERVICES, default=[]): notify,
             vol.Optional(CONF_ALEXA_SERVICES, default=[]): notify,
             vol.Optional(CONF_EXTRA_SERVICES, default=[]): notify,
+            vol.Optional(CONF_PAUSE_PLAYERS, default=[]): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="media_player", multiple=True)
+            ),
             vol.Required(CONF_QUIET_START, default=DEFAULT_QUIET_START): selector.TimeSelector(),
             vol.Required(CONF_QUIET_END, default=DEFAULT_QUIET_END): selector.TimeSelector(),
         }
