@@ -131,14 +131,13 @@ async def test_quiet_hours_hold_non_critical_only(hass, freezer, notify, make_en
     await _start(hass, "alarm")
     await advance(hass, freezer, hours=1)  # 23:30, quiet
 
-    titles = [c.data["title"] for c in notify["phone"]]
-    assert titles == ["Alarm"]
+    assert [c.data["message"] for c in notify["phone"]] == ["Alarm is due"]
     assert notify["phone"][0].data["data"]["push"] == {"interruption-level": "time-sensitive"}
     held = next(t for t in entry.runtime_data.tasks.values() if t.type_key == "washer")
     assert held.status == "held" and held.held_reason == "quiet"
 
     await advance(hass, freezer, hours=7, minutes=30)  # 07:00
-    assert "Washer" in [c.data["title"] for c in notify["phone"]]
+    assert "Washer is due" in [c.data["message"] for c in notify["phone"]]
 
 
 async def test_away_sends_one_quiet_notification_then_waits_for_home(

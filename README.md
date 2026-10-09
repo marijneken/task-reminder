@@ -18,6 +18,15 @@ Every bump of `version` in `manifest.json` on `main` publishes a release `vX.Y.Z
 shows the installed version and offers new ones as updates (restart Home Assistant after
 updating).
 
+## What a notification looks like
+
+Every push has the title **Task Reminder**; the body says what is due ("Washer is due", later "Washer is still
+waiting"). Buttons: **Done** (you did it: finishes the task, starts a chained one, resets a fill flag),
+**Snooze** (while snoozes are left) and **Dismiss** (only for dismissable tasks: ends it *without* doing it).
+On iOS the buttons appear when you long-press or pull down the notification; the Apple Watch shows them directly.
+The icon is always the Home Assistant app icon on iOS. Tapping opens Home Assistant at the page you set in the
+integration settings (`/lovelace/...`), or its default page when empty.
+
 ## How it escalates
 
 | Notification | Goes to |
@@ -70,9 +79,9 @@ end time) either drops critical alerts or holds everything.
     due_in: "00:07:00"          # or due_at: "2026-10-09 15:00:00"; omit both for "now"
   ```
 
-  It returns the `task_id`. Ad hoc reminders may break quiet hours and can be dismissed
-  (turn off with `time_critical: false` / `dismissable: false`); several can run at once.
-  Complete or stop them with `task_reminder.done` / `dismiss` (by `task_id`, or `task: ad_hoc`).
+  It returns the `task_id`. Ad hoc reminders may break quiet hours (`time_critical: false` to opt out)
+  and end with **Done**; add `dismissable: true` if you also want a Dismiss button. Several can run at once.
+  Complete them with `task_reminder.done` (by `task_id`, or `type: ad_hoc`).
 
 An egg timer for your dashboard (or to expose to Alexa) is just a script with a field:
 

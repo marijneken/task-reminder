@@ -128,11 +128,12 @@ class TaskType:
 
 
 # Ad hoc reminders and timers: someone asked for this exact moment, so it may
-# break quiet hours, can be dismissed, and any number can run at once.
+# break quiet hours, end with Done (there is nothing to dismiss instead of do),
+# and any number can run at once.
 ADHOC_TYPE = TaskType(
     key=ADHOC_KEY,
     name="Reminder",
-    dismissable=True,
+    dismissable=False,
     time_critical=True,
     single_instance=False,
 )

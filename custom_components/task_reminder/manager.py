@@ -41,6 +41,7 @@ from .const import (
     CONF_PHONE_SERVICES,
     CONF_QUIET_END,
     CONF_QUIET_START,
+    CONF_TAP_URL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DELIVERY_RETRY,
@@ -108,6 +109,7 @@ class TaskManager:
             list(s.get(CONF_PHONE_SERVICES, [])),
             list(s.get(CONF_ALEXA_SERVICES, [])),
             list(s.get(CONF_EXTRA_SERVICES, [])),
+            s.get(CONF_TAP_URL),
         )
 
     def _reload_types(self) -> None:
@@ -353,7 +355,6 @@ class TaskManager:
                 task.away_notified = True
                 await self.notifier.async_quiet(
                     task_id=task.id,
-                    title=task.title,
                     message=task.message or f"{task.title} is due (you're away)",
                 )
             return
@@ -363,7 +364,6 @@ class TaskManager:
             # Nothing to take out: one quiet heads-up, then the task is over.
             await self.notifier.async_quiet(
                 task_id=task.id,
-                title=task.title,
                 message=task.message or f"{task.title}: collection day (nothing flagged)",
             )
             await self._finish(task, "dismissed", chain=False)
@@ -376,7 +376,6 @@ class TaskManager:
         )
         delivered = await self.notifier.async_remind(
             task_id=task.id,
-            title=task.title,
             message=text,
             plan=plan,
             time_critical=task_type.time_critical,

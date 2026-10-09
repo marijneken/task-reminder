@@ -17,6 +17,7 @@ CONF_PHONE_SERVICES = "phone_services"
 CONF_ALEXA_SERVICES = "alexa_services"
 CONF_EXTRA_SERVICES = "extra_services"
 CONF_PAUSE_PLAYERS = "pause_players"
+CONF_TAP_URL = "tap_url"
 CONF_QUIET_START = "quiet_start"
 CONF_QUIET_END = "quiet_end"
 
@@ -86,6 +87,9 @@ DELIVERY_RETRY = timedelta(minutes=1)
 
 STORAGE_VERSION = 1
 STORAGE_KEY = DOMAIN
+
+# Every push notification carries this title; the body says what is due.
+NOTIFICATION_TITLE = "Task Reminder"
 
 SIGNAL_UPDATE = f"{DOMAIN}_update"
 

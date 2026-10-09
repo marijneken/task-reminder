@@ -40,7 +40,7 @@ remind:
       selector:
         boolean:
     dismissable:
-      default: true
+      default: false
       selector:
         boolean:
 done:

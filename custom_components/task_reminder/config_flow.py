@@ -51,6 +51,7 @@ from .const import (
     CONF_START_ENTITY,
     CONF_START_STATE,
     CONF_START_TAG,
+    CONF_TAP_URL,
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
     DEFAULT_DONE_WINDOW_MINUTES,
@@ -92,6 +93,7 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Optional(CONF_PAUSE_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
+            vol.Optional(CONF_TAP_URL): selector.TextSelector(),
             vol.Required(CONF_QUIET_START, default=DEFAULT_QUIET_START): selector.TimeSelector(),
             vol.Required(CONF_QUIET_END, default=DEFAULT_QUIET_END): selector.TimeSelector(),
         }

@@ -11,11 +11,13 @@
           "extra_services": "Other devices notify services",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
-          "pause_players": "Pause these media players"
+          "pause_players": "Pause these media players",
+          "tap_url": "Open this page when a reminder is tapped"
         },
         "data_description": {
           "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
-          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends."
+          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
+          "tap_url": "Optional dashboard path such as /lovelace/reminders. Empty opens Home Assistant at its default page."
         }
       }
     },
@@ -34,7 +36,8 @@
           "extra_services": "Other devices notify services",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
-          "pause_players": "Pause these media players"
+          "pause_players": "Pause these media players",
+          "tap_url": "Open this page when a reminder is tapped"
         }
       }
     }
@@ -282,7 +285,7 @@
         },
         "dismissable": {
           "name": "Dismissable",
-          "description": "Can be ended without doing it. On by default. Done always ends it."
+          "description": "Can be ended with Dismiss as well as Done. Off by default: for a reminder Done already ends it."
         }
       }
     }

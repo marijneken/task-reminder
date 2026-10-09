@@ -8,7 +8,13 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .const import ACTION_DISMISS, ACTION_DONE, ACTION_PREFIX, ACTION_SNOOZE
+from .const import (
+    ACTION_DISMISS,
+    ACTION_DONE,
+    ACTION_PREFIX,
+    ACTION_SNOOZE,
+    NOTIFICATION_TITLE,
+)
 from .policy import ChannelPlan
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,11 +36,13 @@ class Notifier:
         phone: list[str],
         alexa: list[str],
         extra: list[str],
+        tap_url: str | None = None,
     ) -> None:
         self.hass = hass
         self.phone = phone
         self.alexa = alexa
         self.extra = extra
+        self.tap_url = tap_url or None
 
     @property
     def configured(self) -> bool:
@@ -52,6 +60,10 @@ class Notifier:
     async def _send_all(self, calls: list[tuple[str, dict[str, Any]]]) -> int:
         results = await asyncio.gather(*(self._call(s, p) for s, p in calls))
         return sum(results)
+
+    def _tap(self) -> dict[str, str]:
+        """Where tapping the notification goes: iOS reads `url`, Android `clickAction`."""
+        return {"url": self.tap_url, "clickAction": self.tap_url} if self.tap_url else {}
 
     @staticmethod
     def _actions(task_id: str, can_snooze: bool, dismissable: bool) -> list[dict]:
@@ -74,7 +86,6 @@ class Notifier:
         self,
         *,
         task_id: str,
-        title: str,
         message: str,
         plan: ChannelPlan,
         time_critical: bool,
@@ -86,6 +97,7 @@ class Notifier:
             "tag": tag_for(task_id),
             "group": GROUP,
             "actions": self._actions(task_id, can_snooze, dismissable),
+            **self._tap(),
         }
         if plan.critical:
             data["push"] = {"sound": {"name": "default", "critical": 1, "volume": 1.0}}
@@ -94,29 +106,39 @@ class Notifier:
 
         calls: list[tuple[str, dict[str, Any]]] = []
         if plan.phone:
-            calls += [(s, {"title": title, "message": message, "data": data}) for s in self.phone]
+            calls += [
+                (s, {"title": NOTIFICATION_TITLE, "message": message, "data": data})
+                for s in self.phone
+            ]
         if plan.extra:
-            calls += [(s, {"title": title, "message": message, "data": data}) for s in self.extra]
+            calls += [
+                (s, {"title": NOTIFICATION_TITLE, "message": message, "data": data})
+                for s in self.extra
+            ]
         if plan.alexa:
             calls += [(s, {"message": message, "data": {"type": "announce"}}) for s in self.alexa]
         return await self._send_all(calls)
 
-    async def async_quiet(self, *, task_id: str, title: str, message: str) -> int:
+    async def async_quiet(self, *, task_id: str, message: str) -> int:
         """One quiet, passive notification (used while away)."""
         data = {
             "tag": tag_for(task_id),
             "group": GROUP,
             "actions": self._actions(task_id, False, False),
             "push": {"interruption-level": "passive"},
+            **self._tap(),
         }
         return await self._send_all(
-            [(s, {"title": title, "message": message, "data": data}) for s in self.phone]
+            [
+                (s, {"title": NOTIFICATION_TITLE, "message": message, "data": data})
+                for s in self.phone
+            ]
         )
 
     async def async_summary(self, lines: list[str]) -> int:
         """One notification summarising what piled up during a silent period."""
         payload = {
-            "title": "Task reminders",
+            "title": NOTIFICATION_TITLE,
             "message": "\n".join(lines),
             "data": {"group": GROUP, "tag": f"{GROUP}_summary"},
         }

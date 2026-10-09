@@ -33,7 +33,8 @@ async def test_due_after_duration_notifies_phone_only_first(hass, freezer, notif
 
     assert len(notify["phone"]) == 1
     call = notify["phone"][0].data
-    assert call["title"] == "Washer"
+    assert call["title"] == "Task Reminder"
+    assert call["message"] == "Washer is due"
     actions = [a["action"].split("_")[2] for a in call["data"]["actions"]]
     assert actions == ["DONE", "SNOOZE"]
     assert notify["alexa"] == [] and notify["extra"] == []

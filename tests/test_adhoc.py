@@ -21,7 +21,7 @@ async def test_remind_needs_no_task_type(hass, notify, make_entry):
     await make_entry()  # no task types configured at all
     await _remind(hass, title="Call the plumber")
     assert len(notify["phone"]) == 1
-    assert notify["phone"][0].data["title"] == "Call the plumber"
+    assert notify["phone"][0].data["title"] == "Task Reminder"
     assert notify["phone"][0].data["message"] == "Call the plumber is due"
 
 
@@ -47,13 +47,17 @@ async def test_remind_at_a_time(hass, freezer, notify, make_entry):
     assert len(notify["phone"]) == 1
 
 
-async def test_several_at_once_and_dismissable_by_default(hass, notify, make_entry):
+async def test_several_at_once_and_dismiss_only_when_asked(hass, notify, make_entry):
     entry = await make_entry()
-    first = await _remind(hass, title="Egg timer")
+    first = await _remind(hass, title="Egg timer", dismissable=True)
     second = await _remind(hass, title="Laundry out")
     assert first != second and len(entry.runtime_data.tasks) == 2
-    titles = [a["title"] for a in notify["phone"][0].data["data"]["actions"]]
-    assert titles == ["Done", "Snooze", "Dismiss"]
+    first_actions = [a["title"] for a in notify["phone"][0].data["data"]["actions"]]
+    second_actions = [a["title"] for a in notify["phone"][1].data["data"]["actions"]]
+    assert first_actions == ["Done", "Snooze", "Dismiss"]
+    assert second_actions == ["Done", "Snooze"]  # Dismiss would only duplicate Done
+    with pytest.raises(ServiceValidationError, match="cannot be dismissed"):
+        await hass.services.async_call(DOMAIN, "dismiss", {"task_id": second}, blocking=True)
     await hass.services.async_call(DOMAIN, "dismiss", {"task_id": first}, blocking=True)
     assert set(entry.runtime_data.tasks) == {second}
 
@@ -102,7 +106,7 @@ async def test_test_button(hass, notify, make_entry):
         "button", "press", {"entity_id": "button.task_reminder_test_reminder"}, blocking=True
     )
     assert len(entry.runtime_data.tasks) == 1
-    assert notify["phone"][0].data["title"] == "Test reminder"
+    assert notify["phone"][0].data["title"] == "Task Reminder"
     assert notify["phone"][0].data["message"] == "This is a test reminder"
 
 
