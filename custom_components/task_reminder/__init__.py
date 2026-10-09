@@ -21,6 +21,8 @@ from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN, SILENCE_MODES
 from .manager import TaskManager
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 PLATFORMS = [Platform.SELECT, Platform.DATETIME, Platform.SENSOR]
 
 type TaskReminderConfigEntry = ConfigEntry[TaskManager]
