@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import replace
 from datetime import datetime, time, timedelta
 from typing import Any
 from uuid import uuid4
@@ -53,7 +54,7 @@ from .const import (
     STORAGE_VERSION,
     SUMMARY_GRACE,
 )
-from .models import Silence, Task, TaskStatus, TaskType
+from .models import ADHOC_TYPE, Silence, Task, TaskStatus, TaskType
 from .notifier import Notifier
 from .policy import (
     channel_plan,
@@ -105,7 +106,7 @@ class TaskManager:
         )
 
     def _reload_types(self) -> None:
-        self.types = {}
+        self.types = {ADHOC_TYPE.key: ADHOC_TYPE}
         for subentry in self.entry.subentries.values():
             try:
                 task_type = TaskType.from_subentry(subentry)
@@ -120,6 +121,13 @@ class TaskManager:
             time.fromisoformat(s.get(CONF_QUIET_START, DEFAULT_QUIET_START)),
             time.fromisoformat(s.get(CONF_QUIET_END, DEFAULT_QUIET_END)),
         )
+
+    def _type_of(self, task: Task) -> TaskType | None:
+        """The task's type, with the per-task overrides an ad hoc reminder carries."""
+        task_type = self.types.get(task.type_key)
+        if task_type and (overrides := task.extra.get("overrides")):
+            task_type = replace(task_type, **overrides)
+        return task_type
 
     def flag_on(self, task_type: TaskType) -> bool:
         """The type's fill flag (e.g. "bin has waste") is on."""
@@ -304,7 +312,7 @@ class TaskManager:
 
     async def _fire(self, task: Task, now: datetime) -> None:
         """A task's next_at has passed: notify it, or hold it."""
-        task_type = self.types.get(task.type_key)
+        task_type = self._type_of(task)
         if task_type is None:
             _LOGGER.warning("Task %s has no type %s any more; dropping", task.id, task.type_key)
             await self._finish(task, "dismissed", chain=False)
@@ -395,10 +403,16 @@ class TaskManager:
         message: str | None = None,
         due_in: timedelta | None = None,
         due_at: datetime | None = None,
+        overrides: dict[str, Any] | None = None,
     ) -> Task:
-        """Start a task of a type. Single-instance types return the running one."""
+        """Start a task of a type. Single-instance types return the running one.
+
+        `overrides` (time_critical, dismissable) change the type for this task only.
+        """
         async with self._lock:
             task = self._start_locked(type_key, title, message, due_in, due_at)
+            if overrides:
+                task.extra["overrides"] = overrides
             await self._commit()
         await self.async_process()
         return task
@@ -448,7 +462,7 @@ class TaskManager:
             EVENT_FINISHED,
             {"task_id": task.id, "type": task.type_key, "title": task.title, "outcome": outcome},
         )
-        task_type = self.types.get(task.type_key)
+        task_type = self._type_of(task)
         if outcome == "done" and task_type and task_type.flag_entity:
             # The bin is out: reset the "has waste" flag.
             try:
@@ -491,7 +505,7 @@ class TaskManager:
         async with self._lock:
             matches = self.resolve(task_id, type_key)
             for task in matches:
-                task_type = self.types.get(task.type_key)
+                task_type = self._type_of(task)
                 if task_type is None or not self.is_dismissable(task_type):
                     raise ServiceValidationError(
                         f"{task.title} cannot be dismissed; only completing it ends it"
@@ -506,7 +520,7 @@ class TaskManager:
             matches = self.resolve(task_id, type_key)
             now = dt_util.utcnow()
             for task in matches:
-                task_type = self.types.get(task.type_key)
+                task_type = self._type_of(task)
                 minutes = (
                     snooze_for(task.snooze_count, task_type.snooze_minutes) if task_type else None
                 )

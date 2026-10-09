@@ -8,6 +8,9 @@ DOMAIN = "task_reminder"
 
 SUBENTRY_TYPE = "task_type"
 
+# Built-in type behind the `remind` action and the test button. Needs no setup.
+ADHOC_KEY = "ad_hoc"
+
 # Hub settings (entry data, overridden by entry options)
 CONF_PERSON = "person"
 CONF_PHONE_SERVICES = "phone_services"

@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigSubentry
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ADHOC_KEY,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
@@ -115,6 +116,17 @@ class TaskType:
     def from_subentry(cls, subentry: ConfigSubentry) -> TaskType:
         """Build from a config subentry."""
         return cls.from_data(dict(subentry.data))
+
+
+# Ad hoc reminders and timers: someone asked for this exact moment, so it may
+# break quiet hours, can be dismissed, and any number can run at once.
+ADHOC_TYPE = TaskType(
+    key=ADHOC_KEY,
+    name="Reminder",
+    dismissable=True,
+    time_critical=True,
+    single_instance=False,
+)
 
 
 class TaskStatus(StrEnum):

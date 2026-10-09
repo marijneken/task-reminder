@@ -17,6 +17,32 @@ start:
     due_at:
       selector:
         datetime:
+remind:
+  fields:
+    title:
+      required: true
+      example: Egg timer
+      selector:
+        text:
+    message:
+      example: The eggs are done
+      selector:
+        text:
+    due_in:
+      example: "00:07:00"
+      selector:
+        duration:
+    due_at:
+      selector:
+        datetime:
+    time_critical:
+      default: true
+      selector:
+        boolean:
+    dismissable:
+      default: true
+      selector:
+        boolean:
 done:
   fields:
     task_id:

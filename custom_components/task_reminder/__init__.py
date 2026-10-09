@@ -18,12 +18,12 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, SILENCE_MODES
+from .const import ADHOC_KEY, DOMAIN, SILENCE_MODES
 from .manager import TaskManager
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-PLATFORMS = [Platform.SELECT, Platform.DATETIME, Platform.SENSOR]
+PLATFORMS = [Platform.BUTTON, Platform.SELECT, Platform.DATETIME, Platform.SENSOR]
 
 type TaskReminderConfigEntry = ConfigEntry[TaskManager]
 
@@ -32,6 +32,7 @@ TARGET = {
     vol.Optional("type"): cv.string,
 }
 SERVICE_START = "start"
+SERVICE_REMIND = "remind"
 SERVICE_DONE = "done"
 SERVICE_SNOOZE = "snooze"
 SERVICE_DISMISS = "dismiss"
@@ -58,6 +59,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         )
         return {"task_id": task.id}
 
+    async def remind(call: ServiceCall) -> ServiceResponse:
+        overrides = {k: call.data[k] for k in ("time_critical", "dismissable") if k in call.data}
+        task = await _manager(hass).async_start_task(
+            ADHOC_KEY,
+            title=call.data["title"],
+            message=call.data.get("message"),
+            due_in=call.data.get("due_in"),
+            due_at=call.data.get("due_at"),
+            overrides=overrides or None,
+        )
+        return {"task_id": task.id}
+
     async def done(call: ServiceCall) -> None:
         await _manager(hass).async_done(call.data.get("task_id"), call.data.get("type"))
 
@@ -81,6 +94,24 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 vol.Optional("message"): cv.string,
                 vol.Optional("due_in"): vol.All(cv.time_period, vol.Range(min=timedelta(0))),
                 vol.Optional("due_at"): cv.datetime,
+            }
+        ),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REMIND,
+        remind,
+        schema=vol.Schema(
+            {
+                vol.Required("title"): cv.string,
+                vol.Optional("message"): cv.string,
+                vol.Exclusive("due_in", "due"): vol.All(
+                    cv.time_period, vol.Range(min=timedelta(0))
+                ),
+                vol.Exclusive("due_at", "due"): cv.datetime,
+                vol.Optional("time_critical"): cv.boolean,
+                vol.Optional("dismissable"): cv.boolean,
             }
         ),
         supports_response=SupportsResponse.OPTIONAL,

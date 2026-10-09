@@ -39,13 +39,13 @@
   "config_subentries": {
     "task_type": {
       "initiate_flow": {
-        "user": "Add task type",
-        "reconfigure": "Edit task type"
+        "user": "Add task",
+        "reconfigure": "Edit task"
       },
-      "entry_type": "Task type",
+      "entry_type": "Task",
       "step": {
         "user": {
-          "title": "Task type",
+          "title": "Task",
           "data": {
             "name": "Name",
             "dismissable": "Dismissable",
@@ -85,7 +85,7 @@
           }
         },
         "reconfigure": {
-          "title": "Task type",
+          "title": "Task",
           "data": {
             "name": "Name",
             "dismissable": "Dismissable",
@@ -116,11 +116,12 @@
       "error": {
         "invalid_minutes": "Use whole minutes separated by commas, e.g. 10, 5, 3.",
         "duration_and_time": "Choose either a duration or a time of day, not both.",
-        "invalid_name": "Give the task type a name.",
-        "already_exists": "A task type with this name already exists."
+        "invalid_name": "Give the task a name.",
+        "already_exists": "A task with this name already exists.",
+        "reserved_name": "That name is used by the built-in ad hoc reminders. Choose another."
       },
       "abort": {
-        "reconfigure_successful": "Task type updated."
+        "reconfigure_successful": "Task updated."
       }
     }
   },
@@ -144,6 +145,11 @@
       "active_tasks": {
         "name": "Active tasks"
       }
+    },
+    "button": {
+      "test_reminder": {
+        "name": "Test reminder"
+      }
     }
   },
   "selector": {
@@ -162,7 +168,7 @@
       "fields": {
         "type": {
           "name": "Type",
-          "description": "Task type key (the name, slugified)."
+          "description": "Task key (the name, slugified)."
         },
         "title": {
           "name": "Title",
@@ -235,6 +241,36 @@
         "until": {
           "name": "Until",
           "description": "When silencing ends. Required unless the mode is off."
+        }
+      }
+    },
+    "remind": {
+      "name": "Remind me",
+      "description": "Starts a reminder or timer without any setup, e.g. an egg timer or \"call the plumber at 15:00\". Without a due time it is due immediately. Returns the task id.",
+      "fields": {
+        "title": {
+          "name": "Title",
+          "description": "What to be reminded of."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Reminder text; defaults to \"<title> is due\"."
+        },
+        "due_in": {
+          "name": "Due in",
+          "description": "Due after this long (a timer)."
+        },
+        "due_at": {
+          "name": "Due at",
+          "description": "Due at this date and time."
+        },
+        "time_critical": {
+          "name": "Time critical",
+          "description": "May break quiet hours. On by default, since you asked for this moment."
+        },
+        "dismissable": {
+          "name": "Dismissable",
+          "description": "Can be ended without doing it. On by default. Done always ends it."
         }
       }
     }

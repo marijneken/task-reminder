@@ -18,6 +18,7 @@ from homeassistant.helpers import selector
 from homeassistant.util import slugify
 
 from .const import (
+    ADHOC_KEY,
     CONF_ALEXA_SERVICES,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
@@ -218,6 +219,8 @@ class TaskTypeSubentryFlow(ConfigSubentryFlow):
             key = slugify(user_input[CONF_NAME])
             if not key:
                 errors[CONF_NAME] = "invalid_name"
+            elif key == ADHOC_KEY:
+                errors[CONF_NAME] = "reserved_name"
             elif key in self._others():
                 errors[CONF_NAME] = "already_exists"
             if not errors:
