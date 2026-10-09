@@ -38,6 +38,8 @@ CONF_DONE_ENTITY = "done_entity"
 CONF_DONE_STATE = "done_state"
 CONF_THEN_START = "then_start"
 CONF_FLAG_ENTITY = "flag_entity"
+CONF_SCHEDULE_ENTITY = "schedule_entity"
+CONF_START_DAYS_BEFORE = "start_days_before"
 CONF_QUIET_WITHOUT_FLAG = "quiet_without_flag"
 CONF_DONE_THEN_ENTITY = "done_then_entity"
 CONF_DONE_THEN_STATE = "done_then_state"
@@ -48,6 +50,11 @@ DEFAULT_REPEAT_MINUTES = 5
 DEFAULT_KEEPS_GOING_MINUTES = 2
 DEFAULT_TRIGGER_STATE = "on"
 DEFAULT_DONE_WINDOW_MINUTES = 5
+DEFAULT_START_DAYS_BEFORE = 1
+
+# Attributes of the afvalbeheer collection sensors
+ATTR_DAYS_UNTIL = "Days_until"
+ATTR_SORT_DATE = "Sort_date"
 
 # Silencing
 SILENCE_OFF = "off"

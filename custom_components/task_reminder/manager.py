@@ -30,6 +30,8 @@ from .const import (
     ACTION_DONE,
     ACTION_PREFIX,
     ACTION_SNOOZE,
+    ATTR_DAYS_UNTIL,
+    ATTR_SORT_DATE,
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
     CONF_PERSON,
@@ -75,6 +77,7 @@ class TaskManager:
         self.entry = entry
         self.tasks: dict[str, Task] = {}
         self.silence = Silence()
+        self.marks: dict[str, str] = {}  # type key -> collection date already started
         self.pending_until: datetime | None = None
         self.types: dict[str, TaskType] = {}
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
@@ -142,12 +145,16 @@ class TaskManager:
                 continue
             self.tasks[task.id] = task
         self.silence = Silence.from_dict(data.get("silence"))
+        self.marks = dict(data.get("marks", {}))
         self._subscribe()
 
     async def async_start(self, _hass: HomeAssistant | None = None) -> None:
         """Run once Home Assistant has started: anything that became due while
         it was down fires now, when the notify services exist."""
         self._started = True
+        for task_type in self.types.values():
+            if task_type.schedule_entity:
+                await self._async_schedule_check(task_type)
         await self.async_process()
 
     def async_unload(self) -> None:
@@ -188,6 +195,23 @@ class TaskManager:
                 async_track_state_change_event(self.hass, list(by_entity), _changed)
             )
 
+        for task_type in self.types.values():
+            if not task_type.schedule_entity:
+                continue
+
+            @callback
+            def _schedule_changed(
+                event: Event[EventStateChangedData], task_type: TaskType = task_type
+            ) -> None:
+                if self._started:
+                    self.hass.async_create_task(self._async_schedule_check(task_type))
+
+            self._unsubs.append(
+                async_track_state_change_event(
+                    self.hass, [task_type.schedule_entity], _schedule_changed
+                )
+            )
+
         person = self.settings.get(CONF_PERSON)
         if person:
 
@@ -208,6 +232,7 @@ class TaskManager:
             {
                 "tasks": [t.to_dict() for t in self.tasks.values()],
                 "silence": self.silence.to_dict(),
+                "marks": self.marks,
             }
         )
 
@@ -546,6 +571,40 @@ class TaskManager:
                     window = timedelta(minutes=task_type.done_window_minutes)
                     if first and now - first <= window:
                         await self._finish(task, "done")
+            await self._commit()
+        await self.async_process()
+
+    async def _async_schedule_check(self, task_type: TaskType) -> None:
+        """Start the task when a collection is near; expire it once it has passed.
+
+        Reads the afvalbeheer attributes `Days_until` and `Sort_date`. A task is
+        started once per collection date (remembered in storage), also when the
+        start was missed, so a restart never repeats a finished task.
+        """
+        state = self.hass.states.get(task_type.schedule_entity)
+        if state is None or state.state in ("unavailable", "unknown"):
+            return
+        try:
+            days = int(state.attributes[ATTR_DAYS_UNTIL])
+        except (KeyError, TypeError, ValueError):
+            _LOGGER.debug("%s has no usable %s", task_type.schedule_entity, ATTR_DAYS_UNTIL)
+            return
+        collection = str(state.attributes.get(ATTR_SORT_DATE) or state.state)
+
+        async with self._lock:
+            for task in self._active(task_type.key):
+                if task.extra.get("collection") not in (None, collection):
+                    # The collection it was for has passed.
+                    await self._finish(task, "expired", chain=False)
+            if 0 <= days <= task_type.start_days_before and (
+                self.marks.get(task_type.key) != collection
+            ):
+                self.marks[task_type.key] = collection
+                late = days < task_type.start_days_before
+                already = bool(self._active(task_type.key))
+                task = self._start_locked(task_type.key, due_at=dt_util.utcnow() if late else None)
+                if not already or "collection" not in task.extra:
+                    task.extra["collection"] = collection
             await self._commit()
         await self.async_process()
 

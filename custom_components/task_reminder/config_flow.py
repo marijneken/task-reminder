@@ -40,8 +40,10 @@ from .const import (
     CONF_QUIET_START,
     CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
+    CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
+    CONF_START_DAYS_BEFORE,
     CONF_START_ENTITY,
     CONF_START_STATE,
     CONF_THEN_START,
@@ -52,6 +54,7 @@ from .const import (
     DEFAULT_QUIET_START,
     DEFAULT_REPEAT_MINUTES,
     DEFAULT_SNOOZE_MINUTES,
+    DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
     DOMAIN,
     SUBENTRY_TYPE,
@@ -131,14 +134,14 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
     entity = selector.EntitySelector()
     text = selector.TextSelector()
 
-    def minutes(lo: int, hi: int) -> selector.NumberSelector:
+    def minutes(lo: int, hi: int, unit: str = "min") -> selector.NumberSelector:
         return selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=lo,
                 max=hi,
                 step=1,
                 mode=selector.NumberSelectorMode.BOX,
-                unit_of_measurement="min",
+                unit_of_measurement=unit,
             )
         )
 
@@ -153,6 +156,12 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
         vol.Required(CONF_REPEAT_MINUTES, default=DEFAULT_REPEAT_MINUTES): minutes(1, 240),
         vol.Required(CONF_KEEPS_GOING_MINUTES, default=DEFAULT_KEEPS_GOING_MINUTES): minutes(
             1, 240
+        ),
+        vol.Optional(CONF_SCHEDULE_ENTITY): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor")
+        ),
+        vol.Optional(CONF_START_DAYS_BEFORE, default=DEFAULT_START_DAYS_BEFORE): minutes(
+            0, 14, "d"
         ),
         vol.Optional(CONF_START_ENTITY): entity,
         vol.Optional(CONF_START_STATE, default=DEFAULT_TRIGGER_STATE): text,

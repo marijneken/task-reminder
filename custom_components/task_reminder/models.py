@@ -27,8 +27,10 @@ from .const import (
     CONF_NAME,
     CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
+    CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
+    CONF_START_DAYS_BEFORE,
     CONF_START_ENTITY,
     CONF_START_STATE,
     CONF_THEN_START,
@@ -37,6 +39,7 @@ from .const import (
     DEFAULT_KEEPS_GOING_MINUTES,
     DEFAULT_REPEAT_MINUTES,
     DEFAULT_SNOOZE_MINUTES,
+    DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
     SILENCE_OFF,
 )
@@ -65,6 +68,8 @@ class TaskType:
     done_state: str = DEFAULT_TRIGGER_STATE
     then_start: str | None = None
     flag_entity: str | None = None
+    schedule_entity: str | None = None
+    start_days_before: int = DEFAULT_START_DAYS_BEFORE
     quiet_without_flag: bool = False
     done_then_entity: str | None = None
     done_then_state: str = DEFAULT_TRIGGER_STATE
@@ -96,6 +101,8 @@ class TaskType:
             done_state=data.get(CONF_DONE_STATE) or DEFAULT_TRIGGER_STATE,
             then_start=data.get(CONF_THEN_START) or None,
             flag_entity=data.get(CONF_FLAG_ENTITY) or None,
+            schedule_entity=data.get(CONF_SCHEDULE_ENTITY) or None,
+            start_days_before=int(data.get(CONF_START_DAYS_BEFORE, DEFAULT_START_DAYS_BEFORE)),
             quiet_without_flag=data.get(CONF_QUIET_WITHOUT_FLAG, False),
             done_then_entity=data.get(CONF_DONE_THEN_ENTITY) or None,
             done_then_state=data.get(CONF_DONE_THEN_STATE) or DEFAULT_TRIGGER_STATE,

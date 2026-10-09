@@ -67,7 +67,9 @@
             "done_then_state": "…to this state",
             "done_window_minutes": "…within (minutes)",
             "flag_entity": "Fill flag entity",
-            "quiet_without_flag": "Only a quiet heads-up when the flag is off"
+            "quiet_without_flag": "Only a quiet heads-up when the flag is off",
+            "schedule_entity": "Collection schedule sensor",
+            "start_days_before": "Start days before collection"
           },
           "data_description": {
             "dismissable": "Can be ended without doing it (e.g. the bin is not full). Otherwise only completing it ends it.",
@@ -77,7 +79,9 @@
             "done_entity": "Only counts once the task is due, so a door opened too early does not complete it.",
             "done_then_entity": "For a door sequence (back door, then porch door): the done entity must change first, then this one within the time window.",
             "flag_entity": "E.g. an input_boolean \"bin has waste\". Flag off makes the task dismissable with lighter escalation; completing it turns the flag off.",
-            "quiet_without_flag": "With the flag off, send one passive notification and end the task instead of reminding."
+            "quiet_without_flag": "With the flag off, send one passive notification and end the task instead of reminding.",
+            "schedule_entity": "An afvalbeheer sensor (uses its Days_until and Sort_date attributes). The task starts once per collection and ends as expired when the collection has passed.",
+            "start_days_before": "1 = the day before. Combine with \"Due at time of day\" for e.g. 19:00 the evening before."
           }
         },
         "reconfigure": {
@@ -103,7 +107,9 @@
             "done_then_state": "…to this state",
             "done_window_minutes": "…within (minutes)",
             "flag_entity": "Fill flag entity",
-            "quiet_without_flag": "Only a quiet heads-up when the flag is off"
+            "quiet_without_flag": "Only a quiet heads-up when the flag is off",
+            "schedule_entity": "Collection schedule sensor",
+            "start_days_before": "Start days before collection"
           }
         }
       },

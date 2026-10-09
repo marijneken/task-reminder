@@ -37,6 +37,10 @@ end time) either drops critical alerts or holds everything.
 - **Fill flag entity** (e.g. an `input_boolean` "bin has waste"): flag off makes the task
   dismissable with a lighter ladder; completing the task turns the flag off. With
   "quiet heads-up" a flag-off task sends one passive notification and ends.
+- **Collection schedule sensor** (afvalbeheer, uses its `Days_until` and `Sort_date`
+  attributes) with **start N days before**: the task starts once per collection date,
+  immediately if that moment was missed, and ends as `expired` once the collection has
+  passed. Combine with "Due at time of day" (e.g. 19:00 the evening before).
 - **When done, start** another type (washer → dryer)
 
 ## Actions
