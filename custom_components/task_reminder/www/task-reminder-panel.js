@@ -26,27 +26,100 @@ const DURATIONS = [
 ];
 const PRESETS = [1, 5, 10, 30, 60];
 
-const sameDay = (a, b) => a.toDateString() === b.toDateString();
+// ---------- dates and times, the way Home Assistant formats them ----------
+// HA's own formatters are not available to custom panels, but the user's profile is:
+// hass.locale = {language, time_format, time_zone, date_format}. These follow the same rules as
+// HA's frontend (12/24 hour, language, "local" vs "server" time zone, date order).
+const LOCAL_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return undefined; }
+})();
 
-const fmtTime = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const t = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  const now = new Date();
-  if (sameDay(d, now)) return t;
-  const tomorrow = new Date(now.getTime() + 864e5);
-  if (sameDay(d, tomorrow)) return `tomorrow ${t}`;
-  return `${d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} ${t}`;
+const resolveTz = (option, serverTz) => (option === "local" && LOCAL_TZ ? LOCAL_TZ : serverTz || undefined);
+
+// "language"/"system": ask the language whether 22:00 is written with a "10" (12 hour) or not.
+const useAmPm = (locale) => {
+  if (locale.time_format === "language" || locale.time_format === "system") {
+    const lang = locale.time_format === "language" ? locale.language : undefined;
+    return new Date(2000, 0, 1, 22).toLocaleString(lang, { hour: "numeric" }).includes("10");
+  }
+  return locale.time_format === "12";
 };
 
-const fmtDay = (isoDay) => {
-  if (!isoDay) return "";
-  const d = new Date(isoDay + "T12:00:00");
-  const now = new Date();
-  if (sameDay(d, now)) return "today";
-  if (sameDay(d, new Date(now.getTime() + 864e5))) return "tomorrow";
-  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+const makeFormatters = (hass) => {
+  const locale = (hass && hass.locale) || {};
+  const lang = locale.language || (hass && hass.language) || undefined;
+  const serverTz = hass && hass.config && hass.config.time_zone;
+  const tz = resolveTz(locale.time_zone, serverTz);
+  const make = (opts) => {
+    try { return new Intl.DateTimeFormat(lang, { ...opts, timeZone: tz }); }
+    catch (e) { return new Intl.DateTimeFormat(lang, opts); }
+  };
+  const clock = make({ hour: "numeric", minute: "2-digit", hourCycle: useAmPm(locale) ? "h12" : "h23" });
+  const clockUtc = new Intl.DateTimeFormat(lang, {
+    hour: "numeric",
+    minute: "2-digit",
+    hourCycle: useAmPm(locale) ? "h12" : "h23",
+    timeZone: "UTC",
+  });
+  const dayParts = make({ weekday: "short", month: "short", day: "numeric" });
+  const keyOf = make({ year: "numeric", month: "2-digit", day: "2-digit" }); // sorts as a date
+  const dayKey = (d) => {
+    const p = Object.fromEntries(keyOf.formatToParts(d).map((x) => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}`;
+  };
+  let words;
+  try { words = new Intl.RelativeTimeFormat(lang, { numeric: "auto" }); } catch (e) { words = null; }
+  const word = (n) => (words ? words.format(n, "day") : n === 0 ? "today" : "tomorrow");
+  // "Thu, Oct 15" for MDY, "Thu 15 Oct" for DMY; otherwise whatever the language prefers.
+  const dayText = (d) => {
+    const p = Object.fromEntries(dayParts.formatToParts(d).map((x) => [x.type, x.value]));
+    if (locale.date_format === "DMY") return `${p.weekday} ${p.day} ${p.month}`;
+    if (locale.date_format === "MDY") return `${p.weekday}, ${p.month} ${p.day}`;
+    return dayParts.format(d);
+  };
+  const dayOffset = (d) => Math.round((Date.parse(dayKey(d)) - Date.parse(dayKey(new Date()))) / 864e5);
+  return {
+    time: (iso) => {
+      if (!iso) return "";
+      const d = new Date(iso);
+      const off = dayOffset(d);
+      const t = clock.format(d);
+      if (off === 0) return t;
+      return `${off === 1 ? word(1) : dayText(d)} ${t}`;
+    },
+    // A time of day without a date ("19:00", server time): shown in the user's 12/24 hour style.
+    timeOfDay: (hhmm) => {
+      const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || "");
+      return m ? clockUtc.format(new Date(Date.UTC(2000, 0, 1, Number(m[1]), Number(m[2])))) : hhmm || "";
+    },
+    // A calendar date from the server ("2026-10-15"), not an instant: no time zone shifting.
+    day: (isoDay) => {
+      if (!isoDay) return "";
+      const d = new Date(isoDay + "T12:00:00Z");
+      const off = Math.round((Date.parse(isoDay) - Date.parse(dayKey(new Date()))) / 864e5);
+      if (off === 0) return word(0);
+      if (off === 1) return word(1);
+      return dayTextUtc(d, lang, locale);
+    },
+  };
 };
+
+// Same as dayText but for date-only values (UTC, so the calendar day never shifts).
+const dayTextUtc = (d, lang, locale) => {
+  const f = new Intl.DateTimeFormat(lang, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+  const p = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
+  if (locale.date_format === "DMY") return `${p.weekday} ${p.day} ${p.month}`;
+  if (locale.date_format === "MDY") return `${p.weekday}, ${p.month} ${p.day}`;
+  return f.format(d);
+};
+
+let F = makeFormatters(null);
+const formatSignature = (hass) => {
+  const l = (hass && hass.locale) || {};
+  return JSON.stringify([l.language, l.time_format, l.time_zone, l.date_format, hass && hass.config && hass.config.time_zone]);
+};
+const fmtTime = (iso) => F.time(iso);
+const fmtDay = (isoDay) => F.day(isoDay);
 
 // "in 12 min" / "3 min ago", re-evaluated every second by the panel's ticker.
 const fmtRel = (iso) => {
@@ -78,6 +151,12 @@ class TaskReminderPanel extends HTMLElement {
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
+    const sig = formatSignature(hass);
+    if (sig !== this._formatSig) {
+      this._formatSig = sig;
+      F = makeFormatters(hass);
+      if (!first) this._render();
+    }
     if (first) this._connect();
   }
   set narrow(v) {
@@ -337,7 +416,7 @@ class TaskReminderPanel extends HTMLElement {
   }
 
   _renderUpcoming(u) {
-    const starts = u.starts_on === u.collection ? "starts that day" : `starts ${fmtDay(u.starts_on)}${u.due_time ? ` at ${esc(u.due_time)}` : ""}`;
+    const starts = u.starts_on === u.collection ? "starts that day" : `starts ${fmtDay(u.starts_on)}${u.due_time ? ` at ${esc(F.timeOfDay(u.due_time))}` : ""}`;
     return `
       <div class="card ghost">
         <div class="row">

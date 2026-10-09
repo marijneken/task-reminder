@@ -92,6 +92,9 @@ A **Tasks** item appears in the sidebar and shows everything at a glance, live:
 - **Quick reminder** (a title and minutes, e.g. an egg timer) and one-tap **Start a task** for your task types.
 - **Silence reminders** with a mandatory duration, a banner while it is active, and the last 10 finished tasks.
 
+Times and dates follow your Home Assistant profile (12/24 hour, language, date order and the local or server
+time zone), not the browser's defaults. The panel's own labels are English.
+
 Tasks that are not due yet have **Cancel**, which drops them without side effects (no chained task, no flag reset).
 
 ## Quick reminders and timers (no setup)
