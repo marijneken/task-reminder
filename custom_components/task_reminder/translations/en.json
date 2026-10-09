@@ -39,13 +39,13 @@
   "config_subentries": {
     "task_type": {
       "initiate_flow": {
-        "user": "Add task",
-        "reconfigure": "Edit task"
+        "user": "Add task type",
+        "reconfigure": "Edit task type"
       },
-      "entry_type": "Task",
+      "entry_type": "Task type",
       "step": {
         "user": {
-          "title": "Task",
+          "title": "Task type",
           "data": {
             "name": "Name",
             "dismissable": "Dismissable",
@@ -85,7 +85,7 @@
           }
         },
         "reconfigure": {
-          "title": "Task",
+          "title": "Task type",
           "data": {
             "name": "Name",
             "dismissable": "Dismissable",
@@ -116,12 +116,12 @@
       "error": {
         "invalid_minutes": "Use whole minutes separated by commas, e.g. 10, 5, 3.",
         "duration_and_time": "Choose either a duration or a time of day, not both.",
-        "invalid_name": "Give the task a name.",
-        "already_exists": "A task with this name already exists.",
+        "invalid_name": "Give the task type a name.",
+        "already_exists": "A task type with this name already exists.",
         "reserved_name": "That name is used by the built-in ad hoc reminders. Choose another."
       },
       "abort": {
-        "reconfigure_successful": "Task updated."
+        "reconfigure_successful": "Task type updated."
       }
     }
   },
@@ -168,7 +168,7 @@
       "fields": {
         "type": {
           "name": "Type",
-          "description": "Task key (the name, slugified)."
+          "description": "Task type key (the name, slugified)."
         },
         "title": {
           "name": "Title",

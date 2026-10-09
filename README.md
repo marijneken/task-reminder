@@ -12,7 +12,7 @@ with absolute times, so a restart loses nothing.
 2. Download **Task Reminder**, restart Home Assistant.
 3. Settings → Devices & services → Add integration → Task Reminder. Choose your
    person entity and the notify services per tier (phone, Alexa, other devices).
-4. On the integration page, **Add task** for each kind of recurring reminder (washer, trash, ...).
+4. On the integration page, **Add task type** for each kind of recurring reminder (washer, trash, ...).
 
 Every bump of `version` in `manifest.json` on `main` publishes a release `vX.Y.Z`; HACS
 shows the installed version and offers new ones as updates (restart Home Assistant after
@@ -32,7 +32,7 @@ button disappears. Quiet hours hold non time-critical reminders, being away
 holds everything after one passive notification, and silencing (with a required
 end time) either drops critical alerts or holds everything.
 
-## Task options
+## Task type options
 
 - **Dismissable / time critical / one running at a time**
 - **Due** after a duration, at a time of day, or when an entity changes state
@@ -98,7 +98,7 @@ access token, since the UI is built on it:
 
 - Actions (`start`, `remind`, `done`, `snooze`, `dismiss`, `silence`):
   `POST /api/services/task_reminder/<action>` (add `?return_response` for the task id).
-- Adding or editing a task: the config entries API that the frontend uses, a multi-step flow:
+- Adding or editing a task type: the config entries API that the frontend uses, a multi-step flow:
   `POST /api/config/config_entries/subentries/flow` with `{"handler": ["<entry_id>", "task_type"]}`
   (add `"subentry_id"` to edit), then `POST /api/config/config_entries/subentries/flow/<flow_id>`
   with the form values. Listing, updating and deleting: websocket `config_entries/subentries/list`,
