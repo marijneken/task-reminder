@@ -42,6 +42,9 @@ CONF_DONE_STATE = "done_state"
 CONF_THEN_START = "then_start"
 CONF_FLAG_ENTITY = "flag_entity"
 CONF_SCHEDULE_ENTITY = "schedule_entity"
+CONF_START_TAG = "start_tag"
+CONF_DONE_TAG = "done_tag"
+CONF_GOOD_MOMENT_ENTITIES = "good_moment_entities"
 CONF_START_DAYS_BEFORE = "start_days_before"
 CONF_QUIET_WITHOUT_FLAG = "quiet_without_flag"
 CONF_DONE_THEN_ENTITY = "done_then_entity"
@@ -72,6 +75,10 @@ HOLD_AWAY = "away"
 
 # After a silent period ends with several piled-up tasks, the summary goes out
 # first and the individual reminders follow after this delay.
+# A good moment (e.g. motion on the stairs) only brings a reminder forward when
+# the last one is at least this old, so it cannot turn into a barrage.
+GOOD_MOMENT_COOLDOWN = timedelta(minutes=2)
+EVENT_TAG_SCANNED = "tag_scanned"
 SUMMARY_GRACE = timedelta(minutes=1)
 # Delay before retrying when no notification channel accepted a message.
 DELIVERY_RETRY = timedelta(minutes=1)

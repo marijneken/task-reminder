@@ -23,6 +23,7 @@ from .const import (
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
+    CONF_DONE_TAG,
     CONF_DONE_THEN_ENTITY,
     CONF_DONE_THEN_STATE,
     CONF_DONE_WINDOW_MINUTES,
@@ -32,6 +33,7 @@ from .const import (
     CONF_DURATION_MINUTES,
     CONF_EXTRA_SERVICES,
     CONF_FLAG_ENTITY,
+    CONF_GOOD_MOMENT_ENTITIES,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
@@ -47,6 +49,7 @@ from .const import (
     CONF_START_DAYS_BEFORE,
     CONF_START_ENTITY,
     CONF_START_STATE,
+    CONF_START_TAG,
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
     DEFAULT_DONE_WINDOW_MINUTES,
@@ -133,6 +136,7 @@ class TaskReminderOptionsFlow(OptionsFlow):
 
 def _type_schema(other_types: dict[str, str]) -> vol.Schema:
     entity = selector.EntitySelector()
+    tag = selector.EntitySelector(selector.EntitySelectorConfig(domain="tag"))
     text = selector.TextSelector()
 
     def minutes(lo: int, hi: int, unit: str = "min") -> selector.NumberSelector:
@@ -165,6 +169,11 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
             0, 14, "d"
         ),
         vol.Optional(CONF_START_ENTITY): entity,
+        vol.Optional(CONF_START_TAG): tag,
+        vol.Optional(CONF_DONE_TAG): tag,
+        vol.Optional(CONF_GOOD_MOMENT_ENTITIES): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+        ),
         vol.Optional(CONF_START_STATE, default=DEFAULT_TRIGGER_STATE): text,
         vol.Optional(CONF_DUE_ENTITY): entity,
         vol.Optional(CONF_DUE_STATE, default=DEFAULT_TRIGGER_STATE): text,

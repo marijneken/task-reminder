@@ -44,6 +44,8 @@ from .const import (
     DELIVERY_RETRY,
     EVENT_FINISHED,
     EVENT_MOBILE_ACTION,
+    EVENT_TAG_SCANNED,
+    GOOD_MOMENT_COOLDOWN,
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
@@ -185,6 +187,8 @@ class TaskManager:
             ):
                 if entity:
                     by_entity.setdefault(entity, []).append((kind, task_type, state))
+            for entity in task_type.good_moment_entities:
+                by_entity.setdefault(entity, []).append(("good_moment", task_type, "on"))
 
         if by_entity:
 
@@ -232,6 +236,8 @@ class TaskManager:
             )
 
         self._unsubs.append(self.hass.bus.async_listen(EVENT_MOBILE_ACTION, self._on_action))
+        if any(t.start_tag or t.done_tag for t in self.types.values()):
+            self._unsubs.append(self.hass.bus.async_listen(EVENT_TAG_SCANNED, self._on_tag))
 
     # -- persistence & scheduling ----------------------------------------
 
@@ -572,7 +578,13 @@ class TaskManager:
         async with self._lock:
             now = dt_util.utcnow()
             for task in self._active(task_type.key):
-                if kind == "due" and task.status is TaskStatus.ARMED:
+                if kind == "good_moment":
+                    quiet_for = now - task.last_notified_at if task.last_notified_at else None
+                    if task.status is TaskStatus.NOTIFYING and (
+                        quiet_for is not None and quiet_for >= GOOD_MOMENT_COOLDOWN
+                    ):
+                        task.next_at = now  # speak up now instead of at the next repeat
+                elif kind == "due" and task.status is TaskStatus.ARMED:
                     task.due_at = task.next_at = now
                 elif kind == "done" and task.status in ACTIVE_STATES_AFTER_DUE:
                     # A door opened before the task was due must not complete it.
@@ -621,6 +633,26 @@ class TaskManager:
                     task.extra["collection"] = collection
             await self._commit()
         await self.async_process()
+
+    def _tag_matches(self, tag_entity: str | None, tag_id: str) -> bool:
+        state = self.hass.states.get(tag_entity) if tag_entity else None
+        return state is not None and state.attributes.get("tag_id") == tag_id
+
+    async def _on_tag(self, event: Event) -> None:
+        """An NFC tag was scanned: start or complete tasks. A scan is deliberate,
+        so unlike an entity trigger it also completes a task that is not yet due."""
+        tag_id = event.data.get("tag_id")
+        if not tag_id:
+            return
+        for task_type in list(self.types.values()):
+            if self._tag_matches(task_type.done_tag, tag_id) and self._active(task_type.key):
+                async with self._lock:
+                    for task in self._active(task_type.key):
+                        await self._finish(task, "done")
+                    await self._commit()
+                await self.async_process()
+            elif self._tag_matches(task_type.start_tag, tag_id):
+                await self.async_start_task(task_type.key)
 
     async def _on_action(self, event: Event) -> None:
         action = str(event.data.get("action", ""))

@@ -45,6 +45,10 @@ end time) either drops critical alerts or holds everything.
   attributes) with **start N days before**: the task starts once per collection date,
   immediately if that moment was missed, and ends as `expired` once the collection has
   passed. Combine with "Due at time of day" (e.g. 19:00 the evening before).
+- **NFC tags**: start and/or done on a scanned tag (pick tags from Settings, Tags). A scan always
+  completes the task, even before it is due; the same tag for start and done toggles.
+- **Good moments**: binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them
+  turning on brings the next reminder forward (at most every 2 minutes, never during a snooze).
 - **When done, start** another type (washer → dryer)
 
 ## Quick reminders and timers (no setup)

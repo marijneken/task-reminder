@@ -15,6 +15,7 @@ from .const import (
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
+    CONF_DONE_TAG,
     CONF_DONE_THEN_ENTITY,
     CONF_DONE_THEN_STATE,
     CONF_DONE_WINDOW_MINUTES,
@@ -23,6 +24,7 @@ from .const import (
     CONF_DUE_TIME,
     CONF_DURATION_MINUTES,
     CONF_FLAG_ENTITY,
+    CONF_GOOD_MOMENT_ENTITIES,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
@@ -34,6 +36,7 @@ from .const import (
     CONF_START_DAYS_BEFORE,
     CONF_START_ENTITY,
     CONF_START_STATE,
+    CONF_START_TAG,
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
     DEFAULT_DONE_WINDOW_MINUTES,
@@ -69,6 +72,9 @@ class TaskType:
     done_state: str = DEFAULT_TRIGGER_STATE
     then_start: str | None = None
     flag_entity: str | None = None
+    start_tag: str | None = None
+    done_tag: str | None = None
+    good_moment_entities: tuple[str, ...] = ()
     schedule_entity: str | None = None
     start_days_before: int = DEFAULT_START_DAYS_BEFORE
     quiet_without_flag: bool = False
@@ -102,6 +108,9 @@ class TaskType:
             done_state=data.get(CONF_DONE_STATE) or DEFAULT_TRIGGER_STATE,
             then_start=data.get(CONF_THEN_START) or None,
             flag_entity=data.get(CONF_FLAG_ENTITY) or None,
+            start_tag=data.get(CONF_START_TAG) or None,
+            done_tag=data.get(CONF_DONE_TAG) or None,
+            good_moment_entities=tuple(data.get(CONF_GOOD_MOMENT_ENTITIES) or ()),
             schedule_entity=data.get(CONF_SCHEDULE_ENTITY) or None,
             start_days_before=int(data.get(CONF_START_DAYS_BEFORE, DEFAULT_START_DAYS_BEFORE)),
             quiet_without_flag=data.get(CONF_QUIET_WITHOUT_FLAG, False),
