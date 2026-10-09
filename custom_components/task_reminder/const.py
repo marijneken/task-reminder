@@ -87,6 +87,7 @@ SUMMARY_GRACE = timedelta(minutes=1)
 # Delay before retrying when no notification channel accepted a message.
 DELIVERY_RETRY = timedelta(minutes=1)
 
+HISTORY_LIMIT = 10
 STORAGE_VERSION = 1
 STORAGE_KEY = DOMAIN
 

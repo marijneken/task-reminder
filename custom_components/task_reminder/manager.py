@@ -51,6 +51,7 @@ from .const import (
     EVENT_MOBILE_ACTION,
     EVENT_TAG_SCANNED,
     GOOD_MOMENT_COOLDOWN,
+    HISTORY_LIMIT,
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
@@ -85,6 +86,7 @@ class TaskManager:
         self.entry = entry
         self.tasks: dict[str, Task] = {}
         self.silence = Silence()
+        self.history: list[dict[str, str]] = []  # newest first
         self.marks: dict[str, str] = {}  # type key -> collection date already started
         self.pending_until: datetime | None = None
         self.types: dict[str, TaskType] = {}
@@ -162,6 +164,7 @@ class TaskManager:
             self.tasks[task.id] = task
         self.silence = Silence.from_dict(data.get("silence"))
         self.marks = dict(data.get("marks", {}))
+        self.history = list(data.get("history", []))
         self._update_notify_issue()
         self._subscribe()
 
@@ -268,6 +271,7 @@ class TaskManager:
                 "tasks": [t.to_dict() for t in self.tasks.values()],
                 "silence": self.silence.to_dict(),
                 "marks": self.marks,
+                "history": self.history,
             }
         )
 
@@ -518,6 +522,16 @@ class TaskManager:
     async def _finish(self, task: Task, outcome: str, *, chain: bool = True) -> None:
         self.tasks.pop(task.id, None)
         await self._resume_media(task)
+        self.history.insert(
+            0,
+            {
+                "title": task.title,
+                "type": task.type_key,
+                "outcome": outcome,
+                "at": dt_util.utcnow().isoformat(),
+            },
+        )
+        del self.history[HISTORY_LIMIT:]
         await self.notifier.async_clear(task.id)
         self.hass.bus.async_fire(
             EVENT_FINISHED,
@@ -560,6 +574,18 @@ class TaskManager:
                 await self._finish(task, "done")
             await self._commit()
         await self.async_process()
+
+    async def async_cancel(self, task_id: str) -> None:
+        """Drop a task that is not due yet. No side effects: nothing was done, so no
+        chained task starts and no fill flag is reset."""
+        async with self._lock:
+            (task,) = self.resolve(task_id, None)
+            if task.status is not TaskStatus.ARMED:
+                raise ServiceValidationError(
+                    f"{task.title} is already due; complete or dismiss it instead"
+                )
+            await self._finish(task, "cancelled", chain=False)
+            await self._commit()
 
     async def async_dismiss(self, task_id: str | None = None, type_key: str | None = None) -> None:
         """End a dismissable task without doing it."""

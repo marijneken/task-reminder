@@ -72,6 +72,19 @@ end time) either drops critical alerts or holds everything.
   turning on brings the next reminder forward (at most every 2 minutes, never during a snooze).
 - **When done, start** another type (washer → dryer)
 
+## The Tasks panel
+
+A **Tasks** item appears in the sidebar and shows everything at a glance, live:
+
+- **Needs you**: reminders that went out and wait for you, with how long ago, when the next one comes,
+  how far up the escalation ladder they are (phone, Alexa, all devices, keeps going) and Done / Snooze / Dismiss.
+- **Snoozed**, **Coming up** (due times with a live countdown, plus the next collections for tasks that follow a
+  schedule sensor and when they will start) and **On hold** (quiet hours, away, silent).
+- **Quick reminder** (a title and minutes, e.g. an egg timer) and one-tap **Start a task** for your task types.
+- **Silence reminders** with a mandatory duration, a banner while it is active, and the last 10 finished tasks.
+
+Tasks that are not due yet have **Cancel**, which drops them without side effects (no chained task, no flag reset).
+
 ## Quick reminders and timers (no setup)
 
 - Press **Test reminder** (button on the Task Reminder device) to get a reminder right now:

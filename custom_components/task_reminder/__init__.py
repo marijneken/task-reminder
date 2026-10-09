@@ -20,6 +20,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import ADHOC_KEY, DOMAIN, SILENCE_MODES
 from .manager import TaskManager
+from .panel import async_setup_panel
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -48,6 +49,7 @@ def _manager(hass: HomeAssistant) -> TaskManager:
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions once; they work whenever the entry is loaded."""
+    await async_setup_panel(hass)
 
     async def start(call: ServiceCall) -> ServiceResponse:
         task = await _manager(hass).async_start_task(
