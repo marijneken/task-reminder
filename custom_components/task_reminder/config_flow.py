@@ -37,6 +37,7 @@ from .const import (
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
+    CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
@@ -47,6 +48,7 @@ from .const import (
     CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
+    CONF_SOUND,
     CONF_START_DAYS_BEFORE,
     CONF_START_ENTITY,
     CONF_START_STATE,
@@ -94,6 +96,7 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
             vol.Optional(CONF_TAP_URL): selector.TextSelector(),
+            vol.Optional(CONF_NOTIFICATION_SOUND): selector.TextSelector(),
             vol.Required(CONF_QUIET_START, default=DEFAULT_QUIET_START): selector.TimeSelector(),
             vol.Required(CONF_QUIET_END, default=DEFAULT_QUIET_END): selector.TimeSelector(),
         }
@@ -174,6 +177,7 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
         vol.Optional(CONF_START_DAYS_BEFORE, default=DEFAULT_START_DAYS_BEFORE): minutes(
             0, 14, "d"
         ),
+        vol.Optional(CONF_SOUND): text,
         vol.Optional(CONF_START_ENTITY): entity,
         vol.Optional(CONF_START_TAG): tag,
         vol.Optional(CONF_DONE_TAG): tag,

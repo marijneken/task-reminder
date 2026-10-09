@@ -91,6 +91,7 @@ class Notifier:
         time_critical: bool,
         can_snooze: bool,
         dismissable: bool,
+        sound: str | None = None,
     ) -> int:
         """Send a reminder along the plan. Returns how many services accepted it."""
         data: dict[str, Any] = {
@@ -99,10 +100,16 @@ class Notifier:
             "actions": self._actions(task_id, can_snooze, dismissable),
             **self._tap(),
         }
+        push: dict[str, Any] = {}
         if plan.critical:
-            data["push"] = {"sound": {"name": "default", "critical": 1, "volume": 1.0}}
-        elif time_critical:
-            data["push"] = {"interruption-level": "time-sensitive"}
+            push["sound"] = {"name": sound or "default", "critical": 1, "volume": 1.0}
+        else:
+            if time_critical:
+                push["interruption-level"] = "time-sensitive"
+            if sound:
+                push["sound"] = sound
+        if push:
+            data["push"] = push
 
         calls: list[tuple[str, dict[str, Any]]] = []
         if plan.phone:

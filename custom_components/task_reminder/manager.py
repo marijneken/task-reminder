@@ -36,6 +36,7 @@ from .const import (
     ATTR_SORT_DATE,
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
+    CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
@@ -381,6 +382,9 @@ class TaskManager:
             time_critical=task_type.time_critical,
             can_snooze=snooze_for(task.snooze_count, snoozes) is not None,
             dismissable=self.is_dismissable(task_type),
+            sound=task_type.sound
+            or (self.settings.get(CONF_NOTIFICATION_SOUND) or "").strip()
+            or None,
         )
         if self.notifier.configured and delivered == 0:
             _LOGGER.warning("No channel delivered %s; retrying shortly", task.title)

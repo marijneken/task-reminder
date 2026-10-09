@@ -18,6 +18,8 @@ CONF_ALEXA_SERVICES = "alexa_services"
 CONF_EXTRA_SERVICES = "extra_services"
 CONF_PAUSE_PLAYERS = "pause_players"
 CONF_TAP_URL = "tap_url"
+CONF_NOTIFICATION_SOUND = "notification_sound"
+CONF_SOUND = "sound"  # per task type, overrides the hub sound
 CONF_QUIET_START = "quiet_start"
 CONF_QUIET_END = "quiet_end"
 

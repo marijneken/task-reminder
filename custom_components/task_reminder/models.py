@@ -33,6 +33,7 @@ from .const import (
     CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
+    CONF_SOUND,
     CONF_START_DAYS_BEFORE,
     CONF_START_ENTITY,
     CONF_START_STATE,
@@ -72,6 +73,7 @@ class TaskType:
     done_state: str = DEFAULT_TRIGGER_STATE
     then_start: str | None = None
     flag_entity: str | None = None
+    sound: str | None = None
     start_tag: str | None = None
     done_tag: str | None = None
     good_moment_entities: tuple[str, ...] = ()
@@ -108,6 +110,7 @@ class TaskType:
             done_state=data.get(CONF_DONE_STATE) or DEFAULT_TRIGGER_STATE,
             then_start=data.get(CONF_THEN_START) or None,
             flag_entity=data.get(CONF_FLAG_ENTITY) or None,
+            sound=(data.get(CONF_SOUND) or "").strip() or None,
             start_tag=data.get(CONF_START_TAG) or None,
             done_tag=data.get(CONF_DONE_TAG) or None,
             good_moment_entities=tuple(data.get(CONF_GOOD_MOMENT_ENTITIES) or ()),

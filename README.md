@@ -27,6 +27,13 @@ On iOS the buttons appear when you long-press or pull down the notification; the
 The icon is always the Home Assistant app icon on iOS. Tapping opens Home Assistant at the page you set in the
 integration settings (`/lovelace/...`), or its default page when empty.
 
+## Notification sound (iPhone)
+
+Set **Notification sound** in the integration settings (and optionally per task type) to the file name of a
+sound you imported in the Companion app, e.g. `reminder.wav`. The app can import your own sounds, and newer
+versions can import iOS system sounds, under Settings, Companion App, Notifications, Sounds. Critical alerts
+use the same sound. Empty keeps the default sound. Android has its own sound/channel settings.
+
 ## How it escalates
 
 | Notification | Goes to |

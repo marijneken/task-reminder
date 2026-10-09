@@ -12,12 +12,14 @@
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
           "pause_players": "Pause these media players",
-          "tap_url": "Open this page when a reminder is tapped"
+          "tap_url": "Open this page when a reminder is tapped",
+          "notification_sound": "Notification sound (iPhone)"
         },
         "data_description": {
           "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
           "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
-          "tap_url": "Optional dashboard path such as /lovelace/reminders. Empty opens Home Assistant at its default page."
+          "tap_url": "Optional dashboard path such as /lovelace/reminders. Empty opens Home Assistant at its default page.",
+          "notification_sound": "File name of a sound imported in the Companion app, e.g. reminder.wav. Empty uses the default sound. Critical alerts use it too."
         }
       }
     },
@@ -37,7 +39,8 @@
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
           "pause_players": "Pause these media players",
-          "tap_url": "Open this page when a reminder is tapped"
+          "tap_url": "Open this page when a reminder is tapped",
+          "notification_sound": "Notification sound (iPhone)"
         }
       }
     }
@@ -78,7 +81,8 @@
             "start_days_before": "Start days before collection",
             "start_tag": "Start when this NFC tag is scanned",
             "done_tag": "Done when this NFC tag is scanned",
-            "good_moment_entities": "Good moments (speak up early)"
+            "good_moment_entities": "Good moments (speak up early)",
+            "sound": "Notification sound for this task type"
           },
           "data_description": {
             "dismissable": "Can be ended without doing it (e.g. the bin is not full). Otherwise only completing it ends it.",
@@ -93,7 +97,8 @@
             "start_days_before": "1 = the day before. Combine with \"Due at time of day\" for e.g. 19:00 the evening before.",
             "start_tag": "A tag from the Tags page in Settings. If the start and done tag are the same, scanning toggles: start when idle, done when running.",
             "done_tag": "A scan always completes the task, even before it is due.",
-            "good_moment_entities": "Binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them turning on brings the next reminder forward."
+            "good_moment_entities": "Binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them turning on brings the next reminder forward.",
+            "sound": "Overrides the sound set in the integration settings, e.g. a different one for the washer."
           }
         },
         "reconfigure": {
@@ -124,7 +129,8 @@
             "start_days_before": "Start days before collection",
             "start_tag": "Start when this NFC tag is scanned",
             "done_tag": "Done when this NFC tag is scanned",
-            "good_moment_entities": "Good moments (speak up early)"
+            "good_moment_entities": "Good moments (speak up early)",
+            "sound": "Notification sound for this task type"
           }
         }
       },
