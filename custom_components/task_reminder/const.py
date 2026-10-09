@@ -37,11 +37,17 @@ CONF_DUE_STATE = "due_state"
 CONF_DONE_ENTITY = "done_entity"
 CONF_DONE_STATE = "done_state"
 CONF_THEN_START = "then_start"
+CONF_FLAG_ENTITY = "flag_entity"
+CONF_QUIET_WITHOUT_FLAG = "quiet_without_flag"
+CONF_DONE_THEN_ENTITY = "done_then_entity"
+CONF_DONE_THEN_STATE = "done_then_state"
+CONF_DONE_WINDOW_MINUTES = "done_window_minutes"
 
 DEFAULT_SNOOZE_MINUTES = "10, 5, 3"
 DEFAULT_REPEAT_MINUTES = 5
 DEFAULT_KEEPS_GOING_MINUTES = 2
 DEFAULT_TRIGGER_STATE = "on"
+DEFAULT_DONE_WINDOW_MINUTES = 5
 
 # Silencing
 SILENCE_OFF = "off"

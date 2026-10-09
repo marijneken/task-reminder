@@ -62,14 +62,22 @@
             "due_state": "…to this state",
             "done_entity": "Done when this entity changes",
             "done_state": "…to this state",
-            "then_start": "When done, start"
+            "then_start": "When done, start",
+            "done_then_entity": "…then this entity must change",
+            "done_then_state": "…to this state",
+            "done_window_minutes": "…within (minutes)",
+            "flag_entity": "Fill flag entity",
+            "quiet_without_flag": "Only a quiet heads-up when the flag is off"
           },
           "data_description": {
             "dismissable": "Can be ended without doing it (e.g. the bin is not full). Otherwise only completing it ends it.",
             "time_critical": "May break quiet hours.",
             "duration_minutes": "Leave empty when the task becomes due another way.",
             "snooze_minutes": "Comma separated, getting shorter, e.g. 10, 5, 3. After the last one the reminder keeps going.",
-            "done_entity": "Only counts once the task is due, so a door opened too early does not complete it."
+            "done_entity": "Only counts once the task is due, so a door opened too early does not complete it.",
+            "done_then_entity": "For a door sequence (back door, then porch door): the done entity must change first, then this one within the time window.",
+            "flag_entity": "E.g. an input_boolean \"bin has waste\". Flag off makes the task dismissable with lighter escalation; completing it turns the flag off.",
+            "quiet_without_flag": "With the flag off, send one passive notification and end the task instead of reminding."
           }
         },
         "reconfigure": {
@@ -90,7 +98,12 @@
             "due_state": "…to this state",
             "done_entity": "Done when this entity changes",
             "done_state": "…to this state",
-            "then_start": "When done, start"
+            "then_start": "When done, start",
+            "done_then_entity": "…then this entity must change",
+            "done_then_state": "…to this state",
+            "done_window_minutes": "…within (minutes)",
+            "flag_entity": "Fill flag entity",
+            "quiet_without_flag": "Only a quiet heads-up when the flag is off"
           }
         }
       },
@@ -117,10 +130,14 @@
       }
     },
     "datetime": {
-      "silence_until": {"name": "Silencing until"}
+      "silence_until": {
+        "name": "Silencing until"
+      }
     },
     "sensor": {
-      "active_tasks": {"name": "Active tasks"}
+      "active_tasks": {
+        "name": "Active tasks"
+      }
     }
   },
   "selector": {
@@ -137,43 +154,82 @@
       "name": "Start task",
       "description": "Starts a task of a type. Single-instance types return the running task.",
       "fields": {
-        "type": {"name": "Type", "description": "Task type key (the name, slugified)."},
-        "title": {"name": "Title", "description": "Overrides the type name."},
-        "message": {"name": "Message", "description": "Overrides the reminder text."},
-        "due_in": {"name": "Due in", "description": "Overrides when the task becomes due."},
-        "due_at": {"name": "Due at", "description": "Overrides when the task becomes due."}
+        "type": {
+          "name": "Type",
+          "description": "Task type key (the name, slugified)."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Overrides the type name."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Overrides the reminder text."
+        },
+        "due_in": {
+          "name": "Due in",
+          "description": "Overrides when the task becomes due."
+        },
+        "due_at": {
+          "name": "Due at",
+          "description": "Overrides when the task becomes due."
+        }
       }
     },
     "done": {
       "name": "Complete task",
       "description": "Completes tasks, by id or by type.",
       "fields": {
-        "task_id": {"name": "Task ID", "description": "A specific task."},
-        "type": {"name": "Type", "description": "All running tasks of this type."}
+        "task_id": {
+          "name": "Task ID",
+          "description": "A specific task."
+        },
+        "type": {
+          "name": "Type",
+          "description": "All running tasks of this type."
+        }
       }
     },
     "snooze": {
       "name": "Snooze task",
       "description": "Snoozes by the next, shorter, snooze period. Fails when none are left.",
       "fields": {
-        "task_id": {"name": "Task ID", "description": "A specific task."},
-        "type": {"name": "Type", "description": "All running tasks of this type."}
+        "task_id": {
+          "name": "Task ID",
+          "description": "A specific task."
+        },
+        "type": {
+          "name": "Type",
+          "description": "All running tasks of this type."
+        }
       }
     },
     "dismiss": {
       "name": "Dismiss task",
       "description": "Ends a dismissable task without doing it.",
       "fields": {
-        "task_id": {"name": "Task ID", "description": "A specific task."},
-        "type": {"name": "Type", "description": "All running tasks of this type."}
+        "task_id": {
+          "name": "Task ID",
+          "description": "A specific task."
+        },
+        "type": {
+          "name": "Type",
+          "description": "All running tasks of this type."
+        }
       }
     },
     "silence": {
       "name": "Silence reminders",
       "description": "Silence with a mandatory end time, or switch silencing off.",
       "fields": {
-        "mode": {"name": "Mode", "description": "Off, no critical alerts, or silent (nothing sent; tasks pile up)."},
-        "until": {"name": "Until", "description": "When silencing ends. Required unless the mode is off."}
+        "mode": {
+          "name": "Mode",
+          "description": "Off, no critical alerts, or silent (nothing sent; tasks pile up)."
+        },
+        "until": {
+          "name": "Until",
+          "description": "When silencing ends. Required unless the mode is off."
+        }
       }
     }
   }

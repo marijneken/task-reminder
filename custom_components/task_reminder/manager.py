@@ -118,6 +118,17 @@ class TaskManager:
             time.fromisoformat(s.get(CONF_QUIET_END, DEFAULT_QUIET_END)),
         )
 
+    def flag_on(self, task_type: TaskType) -> bool:
+        """The type's fill flag (e.g. "bin has waste") is on."""
+        state = self.hass.states.get(task_type.flag_entity) if task_type.flag_entity else None
+        return state is not None and state.state == "on"
+
+    def is_dismissable(self, task_type: TaskType) -> bool:
+        """With a fill flag the flag decides: no waste means the task may be dismissed."""
+        if task_type.flag_entity:
+            return not self.flag_on(task_type)
+        return task_type.dismissable
+
     # -- lifecycle --------------------------------------------------------
 
     async def async_load(self) -> None:
@@ -155,6 +166,7 @@ class TaskManager:
                 ("start", task_type.start_entity, task_type.start_state),
                 ("due", task_type.due_entity, task_type.due_state),
                 ("done", task_type.done_entity, task_type.done_state),
+                ("done_then", task_type.done_then_entity, task_type.done_then_state),
             ):
                 if entity:
                     by_entity.setdefault(entity, []).append((kind, task_type, state))
@@ -289,8 +301,19 @@ class TaskManager:
                 )
             return
 
+        light = task_type.flag_entity is not None and not self.flag_on(task_type)
+        if light and task_type.quiet_without_flag and task.level == 0:
+            # Nothing to take out: one quiet heads-up, then the task is over.
+            await self.notifier.async_quiet(
+                task_id=task.id,
+                title=task.title,
+                message=task.message or f"{task.title}: collection day (nothing flagged)",
+            )
+            await self._finish(task, "dismissed", chain=False)
+            return
+
         snoozes = task_type.snooze_minutes
-        plan = channel_plan(task.level, snoozes, self.silence.mode)
+        plan = channel_plan(task.level, snoozes, self.silence.mode, light=light)
         text = task.message or (
             f"{task.title} is due" if task.level == 0 else f"{task.title} is still waiting"
         )
@@ -301,7 +324,7 @@ class TaskManager:
             plan=plan,
             time_critical=task_type.time_critical,
             can_snooze=snooze_for(task.snooze_count, snoozes) is not None,
-            dismissable=task_type.dismissable,
+            dismissable=self.is_dismissable(task_type),
         )
         if self.notifier.configured and delivered == 0:
             _LOGGER.warning("No channel delivered %s; retrying shortly", task.title)
@@ -401,6 +424,17 @@ class TaskManager:
             {"task_id": task.id, "type": task.type_key, "title": task.title, "outcome": outcome},
         )
         task_type = self.types.get(task.type_key)
+        if outcome == "done" and task_type and task_type.flag_entity:
+            # The bin is out: reset the "has waste" flag.
+            try:
+                await self.hass.services.async_call(
+                    "homeassistant",
+                    "turn_off",
+                    {"entity_id": task_type.flag_entity},
+                    blocking=False,
+                )
+            except Exception:
+                _LOGGER.warning("Could not reset %s", task_type.flag_entity, exc_info=True)
         if chain and outcome == "done" and task_type and task_type.then_start:
             try:
                 self._start_locked(task_type.then_start)
@@ -433,7 +467,7 @@ class TaskManager:
             matches = self.resolve(task_id, type_key)
             for task in matches:
                 task_type = self.types.get(task.type_key)
-                if task_type is None or not task_type.dismissable:
+                if task_type is None or not self.is_dismissable(task_type):
                     raise ServiceValidationError(
                         f"{task.title} cannot be dismissed; only completing it ends it"
                     )
@@ -503,7 +537,15 @@ class TaskManager:
                     task.due_at = task.next_at = now
                 elif kind == "done" and task.status in ACTIVE_STATES_AFTER_DUE:
                     # A door opened before the task was due must not complete it.
-                    await self._finish(task, "done")
+                    if task_type.done_then_entity:
+                        task.extra["first_at"] = now.isoformat()
+                    else:
+                        await self._finish(task, "done")
+                elif kind == "done_then" and task.status in ACTIVE_STATES_AFTER_DUE:
+                    first = dt_util.parse_datetime(task.extra.get("first_at", ""))
+                    window = timedelta(minutes=task_type.done_window_minutes)
+                    if first and now - first <= window:
+                        await self._finish(task, "done")
             await self._commit()
         await self.async_process()
 

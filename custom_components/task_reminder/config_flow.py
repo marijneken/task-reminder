@@ -22,11 +22,15 @@ from .const import (
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
+    CONF_DONE_THEN_ENTITY,
+    CONF_DONE_THEN_STATE,
+    CONF_DONE_WINDOW_MINUTES,
     CONF_DUE_ENTITY,
     CONF_DUE_STATE,
     CONF_DUE_TIME,
     CONF_DURATION_MINUTES,
     CONF_EXTRA_SERVICES,
+    CONF_FLAG_ENTITY,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
@@ -34,6 +38,7 @@ from .const import (
     CONF_PHONE_SERVICES,
     CONF_QUIET_END,
     CONF_QUIET_START,
+    CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
@@ -41,6 +46,7 @@ from .const import (
     CONF_START_STATE,
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
+    DEFAULT_DONE_WINDOW_MINUTES,
     DEFAULT_KEEPS_GOING_MINUTES,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -154,6 +160,13 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
         vol.Optional(CONF_DUE_STATE, default=DEFAULT_TRIGGER_STATE): text,
         vol.Optional(CONF_DONE_ENTITY): entity,
         vol.Optional(CONF_DONE_STATE, default=DEFAULT_TRIGGER_STATE): text,
+        vol.Optional(CONF_DONE_THEN_ENTITY): entity,
+        vol.Optional(CONF_DONE_THEN_STATE, default=DEFAULT_TRIGGER_STATE): text,
+        vol.Optional(CONF_DONE_WINDOW_MINUTES, default=DEFAULT_DONE_WINDOW_MINUTES): minutes(
+            1, 120
+        ),
+        vol.Optional(CONF_FLAG_ENTITY): entity,
+        vol.Optional(CONF_QUIET_WITHOUT_FLAG, default=False): selector.BooleanSelector(),
     }
     if other_types:
         fields[vol.Optional(CONF_THEN_START)] = selector.SelectSelector(

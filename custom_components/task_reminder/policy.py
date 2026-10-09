@@ -66,14 +66,20 @@ def keeps_going(level: int, snoozes: tuple[int, ...]) -> bool:
     return level >= len(snoozes)
 
 
-def channel_plan(level: int, snoozes: tuple[int, ...], silence_mode: str) -> ChannelPlan:
-    """Escalation ladder: phone, then Alexa, then every device, then critical."""
+def channel_plan(
+    level: int, snoozes: tuple[int, ...], silence_mode: str, *, light: bool = False
+) -> ChannelPlan:
+    """Escalation ladder: phone, then Alexa, then every device, then critical.
+
+    `light` is the gentler ladder for a dismissable task: phone and Alexa only,
+    never critical.
+    """
     going = keeps_going(level, snoozes)
     return ChannelPlan(
         phone=True,
         alexa=level >= 1,
-        extra=level >= 2,
-        critical=going and silence_mode != SILENCE_NO_CRITICAL,
+        extra=level >= 2 and not light,
+        critical=going and not light and silence_mode != SILENCE_NO_CRITICAL,
     )
 
 

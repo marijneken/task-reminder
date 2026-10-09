@@ -14,13 +14,18 @@ from .const import (
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
+    CONF_DONE_THEN_ENTITY,
+    CONF_DONE_THEN_STATE,
+    CONF_DONE_WINDOW_MINUTES,
     CONF_DUE_ENTITY,
     CONF_DUE_STATE,
     CONF_DUE_TIME,
     CONF_DURATION_MINUTES,
+    CONF_FLAG_ENTITY,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
+    CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
@@ -28,6 +33,7 @@ from .const import (
     CONF_START_STATE,
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
+    DEFAULT_DONE_WINDOW_MINUTES,
     DEFAULT_KEEPS_GOING_MINUTES,
     DEFAULT_REPEAT_MINUTES,
     DEFAULT_SNOOZE_MINUTES,
@@ -58,6 +64,11 @@ class TaskType:
     done_entity: str | None = None
     done_state: str = DEFAULT_TRIGGER_STATE
     then_start: str | None = None
+    flag_entity: str | None = None
+    quiet_without_flag: bool = False
+    done_then_entity: str | None = None
+    done_then_state: str = DEFAULT_TRIGGER_STATE
+    done_window_minutes: int = DEFAULT_DONE_WINDOW_MINUTES
 
     @classmethod
     def from_data(cls, data: dict[str, Any]) -> TaskType:
@@ -84,6 +95,13 @@ class TaskType:
             done_entity=data.get(CONF_DONE_ENTITY) or None,
             done_state=data.get(CONF_DONE_STATE) or DEFAULT_TRIGGER_STATE,
             then_start=data.get(CONF_THEN_START) or None,
+            flag_entity=data.get(CONF_FLAG_ENTITY) or None,
+            quiet_without_flag=data.get(CONF_QUIET_WITHOUT_FLAG, False),
+            done_then_entity=data.get(CONF_DONE_THEN_ENTITY) or None,
+            done_then_state=data.get(CONF_DONE_THEN_STATE) or DEFAULT_TRIGGER_STATE,
+            done_window_minutes=int(
+                data.get(CONF_DONE_WINDOW_MINUTES) or DEFAULT_DONE_WINDOW_MINUTES
+            ),
         )
 
     @classmethod
