@@ -92,6 +92,7 @@ class Notifier:
         can_snooze: bool,
         dismissable: bool,
         sound: str | None = None,
+        alexa_targets: list[str] | None = None,
     ) -> int:
         """Send a reminder along the plan. Returns how many services accepted it."""
         data: dict[str, Any] = {
@@ -123,7 +124,8 @@ class Notifier:
                 for s in self.extra
             ]
         if plan.alexa:
-            calls += [(s, {"message": message, "data": {"type": "announce"}}) for s in self.alexa]
+            targets = self.alexa if alexa_targets is None else alexa_targets
+            calls += [(s, {"message": message, "data": {"type": "announce"}}) for s in targets]
         return await self._send_all(calls)
 
     async def async_quiet(self, *, task_id: str, message: str) -> int:

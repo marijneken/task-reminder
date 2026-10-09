@@ -7,6 +7,7 @@ from datetime import timedelta
 DOMAIN = "task_reminder"
 
 SUBENTRY_TYPE = "task_type"
+SUBENTRY_ROOM = "room"
 
 # Built-in type behind the `remind` action and the test button. Needs no setup.
 ADHOC_KEY = "ad_hoc"
@@ -18,6 +19,8 @@ CONF_ALEXA_SERVICES = "alexa_services"
 CONF_EXTRA_SERVICES = "extra_services"
 CONF_PAUSE_PLAYERS = "pause_players"
 CONF_TAP_URL = "tap_url"
+CONF_PRESENCE_ENTITIES = "presence_entities"
+CONF_ALEXA_SERVICE = "alexa_service"
 CONF_NOTIFICATION_SOUND = "notification_sound"
 CONF_SOUND = "sound"  # per task type, overrides the hub sound
 CONF_QUIET_START = "quiet_start"
@@ -81,6 +84,9 @@ HOLD_AWAY = "away"
 # first and the individual reminders follow after this delay.
 # A good moment (e.g. motion on the stairs) only brings a reminder forward when
 # the last one is at least this old, so it cannot turn into a barrage.
+# How long after the last presence in a room it still counts as "where you are",
+# when no room shows presence right now (people sit still; PIR sensors time out).
+ROOM_RECENT = timedelta(minutes=10)
 GOOD_MOMENT_COOLDOWN = timedelta(minutes=2)
 EVENT_TAG_SCANNED = "tag_scanned"
 SUMMARY_GRACE = timedelta(minutes=1)

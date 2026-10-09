@@ -154,6 +154,7 @@ class TaskReminderPanel extends HTMLElement {
       <div class="toolbar">
         ${this._narrow ? `<ha-menu-button></ha-menu-button>` : ""}
         <div class="title">Tasks</div>
+        ${d.room ? `<div class="where" title="Where reminders are announced first"><ha-icon icon="mdi:map-marker"></ha-icon> ${esc(d.room)}</div>` : ""}
       </div>
       <div class="content">
         ${
@@ -455,7 +456,10 @@ const STYLE = `
   .toolbar { display:flex; align-items:center; height:56px; padding:0 12px; gap:8px; position:sticky; top:0; z-index:3;
              background: var(--app-header-background-color, var(--primary-color)); color: var(--app-header-text-color, #fff);
              border-bottom: 1px solid var(--divider-color); }
-  .title { font-size:20px; font-weight:400; margin-left:4px; }
+  .title { font-size:20px; font-weight:400; margin-left:4px; flex:1; }
+  .where { display:inline-flex; align-items:center; gap:4px; font-size:13px; padding:3px 10px 3px 6px; border-radius:14px;
+           background: rgba(255,255,255,.16); }
+  .where ha-icon { --mdc-icon-size: 16px; }
   .content { max-width: 900px; margin: 0 auto; padding: 16px; box-sizing:border-box; }
   ha-icon { --mdc-icon-size: 20px; }
   button { font: inherit; border-radius: 18px; border: 1px solid var(--divider-color); background: var(--card-background-color);

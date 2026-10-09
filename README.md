@@ -27,6 +27,15 @@ On iOS the buttons appear when you long-press or pull down the notification; the
 The icon is always the Home Assistant app icon on iOS. Tapping opens Home Assistant at the page you set in the
 integration settings (`/lovelace/...`), or its default page when empty.
 
+## Rooms and Alexa
+
+Add **rooms** on the integration page (**Add room**): a name, the presence or motion sensors in it, and the
+Alexa notify service of the speaker there. The 2nd reminder is announced only by the speaker in the room you
+are in: the room that shows presence now (or, if several, the one seen most recently), else the room that
+showed presence in the last 10 minutes. From the 3rd reminder every speaker is used, and when no room is known
+(or the room has no speaker) all speakers are used, as before. Room speakers do not need to be listed in the
+integration settings too. The Tasks panel shows the current room in its header.
+
 ## Notification sound (iPhone)
 
 Set **Notification sound** in the integration settings (and optionally per task type) to the file name of a

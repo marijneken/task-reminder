@@ -14,7 +14,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from custom_components.task_reminder.const import DOMAIN, SUBENTRY_TYPE
+from custom_components.task_reminder.const import DOMAIN, SUBENTRY_ROOM, SUBENTRY_TYPE
 
 START = datetime(2026, 10, 9, 12, 0, tzinfo=UTC)
 
@@ -42,6 +42,15 @@ def type_data(key: str, **overrides: Any) -> ConfigSubentryData:
     }
     return ConfigSubentryData(
         data=data, subentry_type=SUBENTRY_TYPE, title=data["name"], unique_id=key
+    )
+
+
+def room_data(key: str, presence: list[str] | None = None, alexa: str | None = None):
+    data = {"key": key, "name": key.title(), "presence_entities": presence or []}
+    if alexa:
+        data["alexa_service"] = alexa
+    return ConfigSubentryData(
+        data=data, subentry_type=SUBENTRY_ROOM, title=data["name"], unique_id=f"room_{key}"
     )
 
 

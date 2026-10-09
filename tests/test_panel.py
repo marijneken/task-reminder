@@ -37,6 +37,23 @@ async def test_snapshot_describes_running_tasks(hass, hass_ws_client, make_entry
     assert snap["history"] == []
 
 
+async def test_snapshot_says_which_room_you_are_in(hass, hass_ws_client, make_entry):
+    from .conftest import room_data
+
+    hass.states.async_set("binary_sensor.motion_office", "on")
+    await make_entry(
+        type_data("washer"), room_data("office", ["binary_sensor.motion_office"], "alexa_office")
+    )
+    client = await hass_ws_client(hass)
+    assert (await _snapshot(client))["room"] == "Office"
+
+
+async def test_snapshot_without_rooms_has_no_room(hass, hass_ws_client, make_entry):
+    await make_entry(type_data("washer"))
+    client = await hass_ws_client(hass)
+    assert (await _snapshot(client))["room"] is None
+
+
 async def test_subscription_pushes_updates(hass, hass_ws_client, make_entry):
     await make_entry(type_data("washer"))
     client = await hass_ws_client(hass)

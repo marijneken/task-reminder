@@ -144,6 +144,43 @@
       "abort": {
         "reconfigure_successful": "Task type updated."
       }
+    },
+    "room": {
+      "initiate_flow": {
+        "user": "Add room",
+        "reconfigure": "Edit room"
+      },
+      "entry_type": "Room",
+      "step": {
+        "user": {
+          "title": "Room",
+          "description": "Reminders are announced by the Alexa in the room you are in (the room that shows presence now, or showed it in the last 10 minutes). From the third reminder every speaker is used, and when no room is known too.",
+          "data": {
+            "name": "Name",
+            "presence_entities": "Presence sensors",
+            "alexa_service": "Alexa notify service"
+          },
+          "data_description": {
+            "presence_entities": "Motion or presence binary sensors in this room.",
+            "alexa_service": "E.g. alexa_media_echo_living_room. Leave empty if the room has no speaker."
+          }
+        },
+        "reconfigure": {
+          "title": "Room",
+          "data": {
+            "name": "Name",
+            "presence_entities": "Presence sensors",
+            "alexa_service": "Alexa notify service"
+          }
+        }
+      },
+      "error": {
+        "invalid_name": "Give the room a name.",
+        "already_exists": "A room with this name already exists."
+      },
+      "abort": {
+        "reconfigure_successful": "Room updated."
+      }
     }
   },
   "entity": {

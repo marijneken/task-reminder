@@ -55,14 +55,17 @@ from .const import (
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
+    ROOM_RECENT,
     SIGNAL_UPDATE,
     SILENCE_OFF,
     SILENCE_SILENT,
     STORAGE_KEY,
     STORAGE_VERSION,
+    SUBENTRY_ROOM,
+    SUBENTRY_TYPE,
     SUMMARY_GRACE,
 )
-from .models import ADHOC_TYPE, Silence, Task, TaskStatus, TaskType
+from .models import ADHOC_TYPE, Room, Silence, Task, TaskStatus, TaskType
 from .notifier import Notifier
 from .policy import (
     channel_plan,
@@ -95,8 +98,10 @@ class TaskManager:
         self._unsub_timer: CALLBACK_TYPE | None = None
         self._unsubs: list[CALLBACK_TYPE] = []
         self._started = False
-        self.notifier = self._build_notifier()
+        self.rooms: dict[str, Room] = {}
+        self._room_seen: dict[str, datetime] = {}  # room key -> last time presence was seen
         self._reload_types()
+        self.notifier = self._build_notifier()
 
     # -- settings ---------------------------------------------------------
 
@@ -110,14 +115,32 @@ class TaskManager:
         return Notifier(
             self.hass,
             list(s.get(CONF_PHONE_SERVICES, [])),
-            list(s.get(CONF_ALEXA_SERVICES, [])),
+            list(
+                dict.fromkeys(
+                    [
+                        *s.get(CONF_ALEXA_SERVICES, []),
+                        *(r.alexa_service for r in self.rooms.values() if r.alexa_service),
+                    ]
+                )
+            ),
             list(s.get(CONF_EXTRA_SERVICES, [])),
             s.get(CONF_TAP_URL),
         )
 
     def _reload_types(self) -> None:
         self.types = {ADHOC_TYPE.key: ADHOC_TYPE}
+        self.rooms = {}
         for subentry in self.entry.subentries.values():
+            if subentry.subentry_type == SUBENTRY_ROOM:
+                try:
+                    room = Room.from_data(dict(subentry.data))
+                except (KeyError, ValueError):
+                    _LOGGER.warning("Ignoring invalid room %s", subentry.title)
+                    continue
+                self.rooms[room.key] = room
+                continue
+            if subentry.subentry_type != SUBENTRY_TYPE:
+                continue
             try:
                 task_type = TaskType.from_subentry(subentry)
             except (KeyError, ValueError):
@@ -138,6 +161,33 @@ class TaskManager:
         if task_type and (overrides := task.extra.get("overrides")):
             task_type = replace(task_type, **overrides)
         return task_type
+
+    def current_room(self) -> Room | None:
+        """Where you are: a room that shows presence now (the one seen most recently
+        if several), else the room with presence in the last few minutes, else unknown.
+        Never a guess beyond that: unknown means "announce everywhere"."""
+        now = dt_util.utcnow()
+        showing = [
+            r
+            for r in self.rooms.values()
+            if any((s := self.hass.states.get(e)) and s.state == "on" for e in r.presence_entities)
+        ]
+        if showing:
+            return max(showing, key=lambda r: self._room_seen.get(r.key, now))
+        recent = [
+            (seen, r)
+            for r in self.rooms.values()
+            if (seen := self._room_seen.get(r.key)) and now - seen <= ROOM_RECENT
+        ]
+        return max(recent, key=lambda p: p[0])[1] if recent else None
+
+    def _alexa_targets(self, plan) -> list[str] | None:
+        """The speaker in the room you are in; every speaker (None) once the reminder
+        reaches the wider tier, or when the room or its speaker is unknown."""
+        if plan.extra:
+            return None
+        room = self.current_room()
+        return [room.alexa_service] if room and room.alexa_service else None
 
     def flag_on(self, task_type: TaskType) -> bool:
         """The type's fill flag (e.g. "bin has waste") is on."""
@@ -232,6 +282,31 @@ class TaskManager:
                 async_track_state_change_event(
                     self.hass, [task_type.schedule_entity], _schedule_changed
                 )
+            )
+
+        presence: dict[str, list[str]] = {}
+        for room in self.rooms.values():
+            for entity in room.presence_entities:
+                presence.setdefault(entity, []).append(room.key)
+        if presence:
+            now = dt_util.utcnow()
+            for entity, room_keys in presence.items():
+                state = self.hass.states.get(entity)
+                if state is not None and state.state == "on":
+                    for key in room_keys:
+                        self._room_seen[key] = now
+
+            @callback
+            def _presence_changed(event: Event[EventStateChangedData]) -> None:
+                new = event.data["new_state"]
+                if new is None or new.state not in ("on", "off"):
+                    return
+                # Seen "on" now, or just stopped (off): both are the last time you were there.
+                for key in presence.get(event.data["entity_id"], []):
+                    self._room_seen[key] = dt_util.utcnow()
+
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, list(presence), _presence_changed)
             )
 
         person = self.settings.get(CONF_PERSON)
@@ -389,6 +464,7 @@ class TaskManager:
             sound=task_type.sound
             or (self.settings.get(CONF_NOTIFICATION_SOUND) or "").strip()
             or None,
+            alexa_targets=self._alexa_targets(plan),
         )
         if self.notifier.configured and delivered == 0:
             _LOGGER.warning("No channel delivered %s; retrying shortly", task.title)

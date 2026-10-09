@@ -19,6 +19,7 @@ from homeassistant.util import slugify
 
 from .const import (
     ADHOC_KEY,
+    CONF_ALEXA_SERVICE,
     CONF_ALEXA_SERVICES,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
@@ -41,6 +42,7 @@ from .const import (
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
+    CONF_PRESENCE_ENTITIES,
     CONF_QUIET_END,
     CONF_QUIET_START,
     CONF_QUIET_WITHOUT_FLAG,
@@ -65,6 +67,7 @@ from .const import (
     DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
     DOMAIN,
+    SUBENTRY_ROOM,
     SUBENTRY_TYPE,
 )
 from .policy import parse_minutes
@@ -126,7 +129,7 @@ class TaskReminderConfigFlow(ConfigFlow, domain=DOMAIN):
         cls, config_entry: ConfigEntry
     ) -> dict[str, type[ConfigSubentryFlow]]:
         """One subentry per task type."""
-        return {SUBENTRY_TYPE: TaskTypeSubentryFlow}
+        return {SUBENTRY_TYPE: TaskTypeSubentryFlow, SUBENTRY_ROOM: RoomSubentryFlow}
 
 
 class TaskReminderOptionsFlow(OptionsFlow):
@@ -217,7 +220,9 @@ class TaskTypeSubentryFlow(ConfigSubentryFlow):
         return {
             s.data[CONF_KEY]: s.title
             for s in entry.subentries.values()
-            if s.data.get(CONF_KEY) and s.data[CONF_KEY] != exclude
+            if s.subentry_type == SUBENTRY_TYPE
+            and s.data.get(CONF_KEY)
+            and s.data[CONF_KEY] != exclude
         }
 
     def _validate(self, user_input: dict[str, Any]) -> dict[str, str]:
@@ -278,4 +283,74 @@ class TaskTypeSubentryFlow(ConfigSubentryFlow):
                 _type_schema(self._others(exclude=key)), user_input or dict(subentry.data)
             ),
             errors=errors,
+        )
+
+
+def _room_schema(hass: HomeAssistant) -> vol.Schema:
+    services = sorted(hass.services.async_services_for_domain("notify"))
+    return vol.Schema(
+        {
+            vol.Required(CONF_NAME): selector.TextSelector(),
+            vol.Optional(CONF_PRESENCE_ENTITIES): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+            ),
+            vol.Optional(CONF_ALEXA_SERVICE): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=services,
+                    custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+        }
+    )
+
+
+class RoomSubentryFlow(ConfigSubentryFlow):
+    """Add or edit a room: where presence is sensed and which Alexa speaks there."""
+
+    def _taken(self, exclude: str | None = None) -> set[str]:
+        return {
+            s.data[CONF_KEY]
+            for s in self._get_entry().subentries.values()
+            if s.subentry_type == SUBENTRY_ROOM and s.data.get(CONF_KEY) != exclude
+        }
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        """New room."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            key = slugify(user_input[CONF_NAME])
+            if not key:
+                errors[CONF_NAME] = "invalid_name"
+            elif key in self._taken():
+                errors[CONF_NAME] = "already_exists"
+            else:
+                return self.async_create_entry(
+                    title=user_input[CONF_NAME],
+                    data={**user_input, CONF_KEY: key},
+                    unique_id=f"room_{key}",
+                )
+        return self.async_show_form(
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(_room_schema(self.hass), user_input),
+            errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Edit a room; its key stays stable."""
+        subentry = self._get_reconfigure_subentry()
+        if user_input is not None:
+            return self.async_update_and_abort(
+                self._get_entry(),
+                subentry,
+                title=user_input[CONF_NAME],
+                data={**user_input, CONF_KEY: subentry.data[CONF_KEY]},
+            )
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                _room_schema(self.hass), dict(subentry.data)
+            ),
         )
