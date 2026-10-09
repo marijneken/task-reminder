@@ -1,12 +1,16 @@
 name: Release
 
-# Push a tag like v0.2.0 (matching the version in manifest.json) to publish a
-# GitHub release; HACS then shows that version and offers it as an update.
+# Bumping "version" in manifest.json on main publishes a GitHub release (and the
+# vX.Y.Z tag) for it, so HACS shows that version and offers it as an update.
+# Idempotent: nothing happens when the release already exists.
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths:
+      - custom_components/task_reminder/manifest.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,14 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Tag must match manifest version
-        run: |
-          manifest=$(python3 -c "import json;print(json.load(open('custom_components/task_reminder/manifest.json'))['version'])")
-          if [ "v$manifest" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match manifest version $manifest" >&2
-            exit 1
-          fi
-      - name: Create release
+      - name: Publish release for the manifest version
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          version=$(python3 -c "import json;print(json.load(open('custom_components/task_reminder/manifest.json'))['version'])")
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists"
+            exit 0
+          fi
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --generate-notes

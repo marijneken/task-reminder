@@ -14,8 +14,9 @@ with absolute times, so a restart loses nothing.
    person entity and the notify services per tier (phone, Alexa, other devices).
 4. On the integration page, **Add task type** for each kind of task.
 
-Releases are tagged `vX.Y.Z` and match the version in `manifest.json`; HACS shows the
-installed version and offers new ones as updates (restart Home Assistant after updating).
+Every bump of `version` in `manifest.json` on `main` publishes a release `vX.Y.Z`; HACS
+shows the installed version and offers new ones as updates (restart Home Assistant after
+updating).
 
 ## How it escalates
 
