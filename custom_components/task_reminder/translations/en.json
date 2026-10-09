@@ -1,0 +1,180 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Task Reminder",
+        "description": "Which notify services reach you. Phone services get the reminder first; Alexa joins from the second reminder, other devices from the third.",
+        "data": {
+          "person": "Person",
+          "phone_services": "Phone notify services",
+          "alexa_services": "Alexa notify services",
+          "extra_services": "Other devices notify services",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end"
+        },
+        "data_description": {
+          "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Task Reminder is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Task Reminder",
+        "data": {
+          "person": "Person",
+          "phone_services": "Phone notify services",
+          "alexa_services": "Alexa notify services",
+          "extra_services": "Other devices notify services",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "task_type": {
+      "initiate_flow": {
+        "user": "Add task type",
+        "reconfigure": "Edit task type"
+      },
+      "entry_type": "Task type",
+      "step": {
+        "user": {
+          "title": "Task type",
+          "data": {
+            "name": "Name",
+            "dismissable": "Dismissable",
+            "time_critical": "Time critical",
+            "single_instance": "Only one running at a time",
+            "duration_minutes": "Due after (minutes)",
+            "due_time": "Due at time of day",
+            "snooze_minutes": "Snooze minutes",
+            "repeat_minutes": "Repeat when unanswered (minutes)",
+            "keeps_going_minutes": "Repeat when it keeps going (minutes)",
+            "start_entity": "Start when this entity changes",
+            "start_state": "…to this state",
+            "due_entity": "Due when this entity changes",
+            "due_state": "…to this state",
+            "done_entity": "Done when this entity changes",
+            "done_state": "…to this state",
+            "then_start": "When done, start"
+          },
+          "data_description": {
+            "dismissable": "Can be ended without doing it (e.g. the bin is not full). Otherwise only completing it ends it.",
+            "time_critical": "May break quiet hours.",
+            "duration_minutes": "Leave empty when the task becomes due another way.",
+            "snooze_minutes": "Comma separated, getting shorter, e.g. 10, 5, 3. After the last one the reminder keeps going.",
+            "done_entity": "Only counts once the task is due, so a door opened too early does not complete it."
+          }
+        },
+        "reconfigure": {
+          "title": "Task type",
+          "data": {
+            "name": "Name",
+            "dismissable": "Dismissable",
+            "time_critical": "Time critical",
+            "single_instance": "Only one running at a time",
+            "duration_minutes": "Due after (minutes)",
+            "due_time": "Due at time of day",
+            "snooze_minutes": "Snooze minutes",
+            "repeat_minutes": "Repeat when unanswered (minutes)",
+            "keeps_going_minutes": "Repeat when it keeps going (minutes)",
+            "start_entity": "Start when this entity changes",
+            "start_state": "…to this state",
+            "due_entity": "Due when this entity changes",
+            "due_state": "…to this state",
+            "done_entity": "Done when this entity changes",
+            "done_state": "…to this state",
+            "then_start": "When done, start"
+          }
+        }
+      },
+      "error": {
+        "invalid_minutes": "Use whole minutes separated by commas, e.g. 10, 5, 3.",
+        "duration_and_time": "Choose either a duration or a time of day, not both.",
+        "invalid_name": "Give the task type a name.",
+        "already_exists": "A task type with this name already exists."
+      },
+      "abort": {
+        "reconfigure_successful": "Task type updated."
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "silence_mode": {
+        "name": "Silencing",
+        "state": {
+          "off": "Off",
+          "no_critical": "No critical alerts",
+          "silent": "Silent"
+        }
+      }
+    },
+    "datetime": {
+      "silence_until": {"name": "Silencing until"}
+    },
+    "sensor": {
+      "active_tasks": {"name": "Active tasks"}
+    }
+  },
+  "selector": {
+    "silence_mode": {
+      "options": {
+        "off": "Off",
+        "no_critical": "No critical alerts",
+        "silent": "Silent"
+      }
+    }
+  },
+  "services": {
+    "start": {
+      "name": "Start task",
+      "description": "Starts a task of a type. Single-instance types return the running task.",
+      "fields": {
+        "type": {"name": "Type", "description": "Task type key (the name, slugified)."},
+        "title": {"name": "Title", "description": "Overrides the type name."},
+        "message": {"name": "Message", "description": "Overrides the reminder text."},
+        "due_in": {"name": "Due in", "description": "Overrides when the task becomes due."},
+        "due_at": {"name": "Due at", "description": "Overrides when the task becomes due."}
+      }
+    },
+    "done": {
+      "name": "Complete task",
+      "description": "Completes tasks, by id or by type.",
+      "fields": {
+        "task_id": {"name": "Task ID", "description": "A specific task."},
+        "type": {"name": "Type", "description": "All running tasks of this type."}
+      }
+    },
+    "snooze": {
+      "name": "Snooze task",
+      "description": "Snoozes by the next, shorter, snooze period. Fails when none are left.",
+      "fields": {
+        "task_id": {"name": "Task ID", "description": "A specific task."},
+        "type": {"name": "Type", "description": "All running tasks of this type."}
+      }
+    },
+    "dismiss": {
+      "name": "Dismiss task",
+      "description": "Ends a dismissable task without doing it.",
+      "fields": {
+        "task_id": {"name": "Task ID", "description": "A specific task."},
+        "type": {"name": "Type", "description": "All running tasks of this type."}
+      }
+    },
+    "silence": {
+      "name": "Silence reminders",
+      "description": "Silence with a mandatory end time, or switch silencing off.",
+      "fields": {
+        "mode": {"name": "Mode", "description": "Off, no critical alerts, or silent (nothing sent; tasks pile up)."},
+        "until": {"name": "Until", "description": "When silencing ends. Required unless the mode is off."}
+      }
+    }
+  }
+}

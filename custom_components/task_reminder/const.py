@@ -1,0 +1,75 @@
+"""Constants for Task Reminder."""
+
+from __future__ import annotations
+
+from datetime import timedelta
+
+DOMAIN = "task_reminder"
+
+SUBENTRY_TYPE = "task_type"
+
+# Hub settings (entry data, overridden by entry options)
+CONF_PERSON = "person"
+CONF_PHONE_SERVICES = "phone_services"
+CONF_ALEXA_SERVICES = "alexa_services"
+CONF_EXTRA_SERVICES = "extra_services"
+CONF_QUIET_START = "quiet_start"
+CONF_QUIET_END = "quiet_end"
+
+DEFAULT_QUIET_START = "23:00:00"
+DEFAULT_QUIET_END = "07:00:00"
+
+# Task type settings (subentry data)
+CONF_KEY = "key"
+CONF_NAME = "name"
+CONF_DISMISSABLE = "dismissable"
+CONF_TIME_CRITICAL = "time_critical"
+CONF_SINGLE_INSTANCE = "single_instance"
+CONF_DURATION_MINUTES = "duration_minutes"
+CONF_DUE_TIME = "due_time"
+CONF_SNOOZE_MINUTES = "snooze_minutes"
+CONF_REPEAT_MINUTES = "repeat_minutes"
+CONF_KEEPS_GOING_MINUTES = "keeps_going_minutes"
+CONF_START_ENTITY = "start_entity"
+CONF_START_STATE = "start_state"
+CONF_DUE_ENTITY = "due_entity"
+CONF_DUE_STATE = "due_state"
+CONF_DONE_ENTITY = "done_entity"
+CONF_DONE_STATE = "done_state"
+CONF_THEN_START = "then_start"
+
+DEFAULT_SNOOZE_MINUTES = "10, 5, 3"
+DEFAULT_REPEAT_MINUTES = 5
+DEFAULT_KEEPS_GOING_MINUTES = 2
+DEFAULT_TRIGGER_STATE = "on"
+
+# Silencing
+SILENCE_OFF = "off"
+SILENCE_NO_CRITICAL = "no_critical"
+SILENCE_SILENT = "silent"
+SILENCE_MODES = [SILENCE_OFF, SILENCE_NO_CRITICAL, SILENCE_SILENT]
+
+# Held reasons
+HOLD_SILENT = "silent"
+HOLD_QUIET = "quiet"
+HOLD_AWAY = "away"
+
+# After a silent period ends with several piled-up tasks, the summary goes out
+# first and the individual reminders follow after this delay.
+SUMMARY_GRACE = timedelta(minutes=1)
+# Delay before retrying when no notification channel accepted a message.
+DELIVERY_RETRY = timedelta(minutes=1)
+
+STORAGE_VERSION = 1
+STORAGE_KEY = DOMAIN
+
+SIGNAL_UPDATE = f"{DOMAIN}_update"
+
+EVENT_FINISHED = f"{DOMAIN}_finished"
+
+# Companion app notification action ids: TASK_REMINDER_<ACTION>_<task id>
+ACTION_PREFIX = "TASK_REMINDER_"
+ACTION_DONE = "DONE"
+ACTION_SNOOZE = "SNOOZE"
+ACTION_DISMISS = "DISMISS"
+EVENT_MOBILE_ACTION = "mobile_app_notification_action"

@@ -1,0 +1,57 @@
+start:
+  fields:
+    type:
+      required: true
+      example: washer
+      selector:
+        text:
+    title:
+      selector:
+        text:
+    message:
+      selector:
+        text:
+    due_in:
+      selector:
+        duration:
+    due_at:
+      selector:
+        datetime:
+done:
+  fields:
+    task_id:
+      selector:
+        text:
+    type:
+      selector:
+        text:
+snooze:
+  fields:
+    task_id:
+      selector:
+        text:
+    type:
+      selector:
+        text:
+dismiss:
+  fields:
+    task_id:
+      selector:
+        text:
+    type:
+      selector:
+        text:
+silence:
+  fields:
+    mode:
+      required: true
+      selector:
+        select:
+          translation_key: silence_mode
+          options:
+            - "off"
+            - no_critical
+            - silent
+    until:
+      selector:
+        datetime:
