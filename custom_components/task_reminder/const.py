@@ -93,6 +93,39 @@ SUMMARY_GRACE = timedelta(minutes=1)
 # Delay before retrying when no notification channel accepted a message.
 DELIVERY_RETRY = timedelta(minutes=1)
 
+# Sounds offered in the sound dropdowns: (file name for the Companion app, label).
+# "default" is the standard tri-tone; the .caf files are iOS system sounds that must be
+# imported once in the app (Settings, Companion App, Notifications, Sounds, System tab);
+# the .wav files ship with the app. Any other file name can be typed.
+SOUND_CHOICES = [
+    ("default", "Default (tri-tone)"),
+    ("alarm.caf", "Alarm (system)"),
+    ("Alert_ReminderDue_Haptic.caf", "Reminder due (system)"),
+    ("Alert_Calendar_Haptic.caf", "Calendar alert (system)"),
+    ("Anticipate.caf", "Anticipate (system)"),
+    ("Bloom.caf", "Bloom (system)"),
+    ("Calypso.caf", "Calypso (system)"),
+    ("Choo_Choo.caf", "Choo Choo (system)"),
+    ("Descent.caf", "Descent (system)"),
+    ("Fanfare.caf", "Fanfare (system)"),
+    ("Ladder.caf", "Ladder (system)"),
+    ("Minuet.caf", "Minuet (system)"),
+    ("News_Flash.caf", "News Flash (system)"),
+    ("Noir.caf", "Noir (system)"),
+    ("Sherwood_Forest.caf", "Sherwood Forest (system)"),
+    ("Spell.caf", "Spell (system)"),
+    ("Suspense.caf", "Suspense (system)"),
+    ("Telegraph.caf", "Telegraph (system)"),
+    ("Tiptoes.caf", "Tiptoes (system)"),
+    ("Typewriters.caf", "Typewriters (system)"),
+    ("Update.caf", "Update (system)"),
+    ("US-EN-Alexa-Mail-Has-Arrived.wav", "Alexa: mail has arrived (pre-installed)"),
+    (
+        "US-EN-Morgan-Freeman-Someone-Is-Arriving.wav",
+        "Morgan Freeman: someone is arriving (pre-installed)",
+    ),
+]
+
 HISTORY_LIMIT = 10
 STORAGE_VERSION = 1
 STORAGE_KEY = DOMAIN

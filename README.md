@@ -38,10 +38,18 @@ integration settings too. The Tasks panel shows the current room in its header.
 
 ## Notification sound (iPhone)
 
-Set **Notification sound** in the integration settings (and optionally per task type) to the file name of a
-sound you imported in the Companion app, e.g. `reminder.wav`. The app can import your own sounds, and newer
-versions can import iOS system sounds, under Settings, Companion App, Notifications, Sounds. Critical alerts
-use the same sound. Empty keeps the default sound. Android has its own sound/channel settings.
+Pick the sound in the integration settings (**Notification sound (iPhone)**), and optionally per task type
+(for example another sound for the washer). It is a dropdown with the standard sounds; you can also type the
+exact file name of any other sound. Critical alerts use the same sound. Empty keeps the default.
+
+- `Default (tri-tone)` and the **pre-installed** sounds (`US-EN-...wav`, spoken clips) work right away.
+- The **iOS system sounds** (Alarm, Anticipate, Bloom, Calypso, Ladder, Telegraph, ...) are `.caf` files that the
+  Companion app has to import **once**: in the app go to Settings, Companion App, Notifications, Sounds, open the
+  **System** tab and tap **Import system sounds**, then restart the phone. After that they can be selected here.
+- **Your own sounds**: 32-bit float 48 kHz `.wav` files, imported in the same Sounds screen (via iTunes File
+  Sharing or a cloud storage app); type the file name including `.wav`.
+- Always the full file name with extension. Android uses notification channels instead (change the sound in the
+  channel settings of the app).
 
 ## How it escalates
 

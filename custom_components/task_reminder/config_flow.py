@@ -67,10 +67,24 @@ from .const import (
     DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
     DOMAIN,
+    SOUND_CHOICES,
     SUBENTRY_ROOM,
     SUBENTRY_TYPE,
 )
 from .policy import parse_minutes
+
+
+def _sound_selector() -> selector.SelectSelector:
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[
+                selector.SelectOptionDict(value=value, label=label)
+                for value, label in SOUND_CHOICES
+            ],
+            custom_value=True,
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
 
 
 def _notify_selector(hass: HomeAssistant) -> selector.SelectSelector:
@@ -99,7 +113,7 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
             vol.Optional(CONF_TAP_URL): selector.TextSelector(),
-            vol.Optional(CONF_NOTIFICATION_SOUND): selector.TextSelector(),
+            vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
             vol.Required(CONF_QUIET_START, default=DEFAULT_QUIET_START): selector.TimeSelector(),
             vol.Required(CONF_QUIET_END, default=DEFAULT_QUIET_END): selector.TimeSelector(),
         }
@@ -180,7 +194,7 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
         vol.Optional(CONF_START_DAYS_BEFORE, default=DEFAULT_START_DAYS_BEFORE): minutes(
             0, 14, "d"
         ),
-        vol.Optional(CONF_SOUND): text,
+        vol.Optional(CONF_SOUND): _sound_selector(),
         vol.Optional(CONF_START_ENTITY): entity,
         vol.Optional(CONF_START_TAG): tag,
         vol.Optional(CONF_DONE_TAG): tag,
