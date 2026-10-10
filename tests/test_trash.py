@@ -8,7 +8,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 FLAG = "input_boolean.papier_has_waste"
 
@@ -30,8 +30,8 @@ async def test_flag_off_means_dismissable_and_lighter(hass, freezer, notify, mak
 
     for _ in range(8):  # light ladder: never other devices, never critical
         await advance(hass, freezer, minutes=5)
-    assert notify["extra"] == []
-    assert all("push" not in c.data["data"] for c in notify["phone"])
+    assert sent(notify["extra"]) == []
+    assert all("push" not in c.data["data"] for c in sent(notify["phone"]))
     assert len(notify["alexa"]) >= 1
 
     await hass.services.async_call(DOMAIN, "dismiss", {"task_id": task_id}, blocking=True)

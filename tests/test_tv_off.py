@@ -6,7 +6,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 TV = "media_player.living_room_tv"
 LG = "media_player.lg_tv"
@@ -83,9 +83,9 @@ async def test_a_failing_tv_does_not_break_reminding(hass, freezer, notify, make
     hass.states.async_set(TV, "playing")
     await _start(hass)
     await _to_keeps_going(hass, freezer)
-    before = len(notify["phone"])
+    before = len(sent(notify["phone"]))
     await advance(hass, freezer, minutes=2)
-    assert len(notify["phone"]) == before + 1
+    assert len(sent(notify["phone"])) == before + 1
 
 
 async def test_the_tv_is_not_turned_back_on_when_done(hass, freezer, make_entry):

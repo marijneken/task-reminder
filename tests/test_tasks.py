@@ -8,7 +8,7 @@ from homeassistant.util import dt as dt_util
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 
 def _manager(entry):
@@ -43,20 +43,20 @@ async def test_due_after_duration_notifies_phone_only_first(hass, freezer, notif
 async def test_unanswered_reminders_escalate_to_critical(hass, freezer, notify, make_entry):
     await make_entry(type_data("washer"))
     await _start(hass, "washer")  # no duration: due now
-    assert len(notify["phone"]) == 1
+    assert len(sent(notify["phone"])) == 1
 
     await advance(hass, freezer, minutes=5)  # level 1: + alexa
     assert len(notify["alexa"]) == 1
     await advance(hass, freezer, minutes=5)  # level 2: + other devices
-    assert len(notify["extra"]) == 1
-    assert "push" not in notify["phone"][-1].data["data"]
+    assert len(sent(notify["extra"])) == 1
+    assert "push" not in sent(notify["phone"])[-1].data["data"]
 
     await advance(hass, freezer, minutes=5)  # level 3: keeps going, critical
-    assert notify["phone"][-1].data["data"]["push"]["sound"]["critical"] == 1
-    before = len(notify["phone"])
+    assert sent(notify["phone"])[-1].data["data"]["push"]["sound"]["critical"] == 1
+    before = len(sent(notify["phone"]))
     await advance(hass, freezer, minutes=2)  # now every 2 minutes
     await advance(hass, freezer, minutes=2)
-    assert len(notify["phone"]) == before + 2
+    assert len(sent(notify["phone"])) == before + 2
 
 
 async def test_snoozes_shrink_and_run_out(hass, freezer, notify, make_entry):

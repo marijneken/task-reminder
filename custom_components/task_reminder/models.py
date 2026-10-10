@@ -208,7 +208,9 @@ class Task:
     last_notified_at: datetime | None = None
     ring_at: datetime | None = None  # next re-trigger of the sound
     ring_until: datetime | None = None  # stop re-triggering after this
-    ring_tag: str | None = None  # tag of the latest re-triggered notification (refresh style)
+    tags: list[str] = field(
+        default_factory=list
+    )  # tags of its notifications on the phones, oldest first
     ring_count: int = 0
     extra: dict[str, Any] = field(default_factory=dict)
 
@@ -230,7 +232,7 @@ class Task:
             "last_notified_at": _dump(self.last_notified_at),
             "ring_at": _dump(self.ring_at),
             "ring_until": _dump(self.ring_until),
-            "ring_tag": self.ring_tag,
+            "tags": self.tags,
             "ring_count": self.ring_count,
             "extra": self.extra,
         }
@@ -254,7 +256,7 @@ class Task:
             last_notified_at=_load(data.get("last_notified_at")),
             ring_at=_load(data.get("ring_at")),
             ring_until=_load(data.get("ring_until")),
-            ring_tag=data.get("ring_tag"),
+            tags=list(data.get("tags") or ([data["ring_tag"]] if data.get("ring_tag") else [])),
             ring_count=data.get("ring_count", 0),
             extra=data.get("extra", {}),
         )

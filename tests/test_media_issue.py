@@ -5,7 +5,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 TV = "media_player.living_room_tv"
 SPOTIFY = "media_player.spotify"
@@ -85,7 +85,7 @@ async def test_failing_media_service_does_not_break_the_reminder(hass, freezer, 
     hass.states.async_set(TV, "playing")
     await _start(hass, "washer")
     await _reach_wide_tier(hass, freezer)
-    assert len(notify["extra"]) == 1
+    assert len(sent(notify["extra"])) == 1
 
 
 async def test_repair_issue_when_no_notify_service(hass, make_entry):

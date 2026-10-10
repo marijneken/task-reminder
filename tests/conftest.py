@@ -45,6 +45,25 @@ def type_data(key: str, **overrides: Any) -> ConfigSubentryData:
     )
 
 
+def sent(calls):
+    """The reminders in a list of notify calls, without the clear_notification commands that
+    remove an older notification when a new one is sent."""
+    return [c for c in calls if c.data.get("message") != "clear_notification"]
+
+
+def on_screen(calls):
+    """Tags of the notifications that are on the phone: sent and not (yet) cleared."""
+    shown: list[str] = []
+    for c in calls:
+        tag = c.data["data"]["tag"]
+        if c.data["message"] == "clear_notification":
+            if tag in shown:
+                shown.remove(tag)
+        elif tag not in shown:
+            shown.append(tag)
+    return shown
+
+
 def room_data(key: str, presence: list[str] | None = None, alexa: str | None = None):
     data = {"key": key, "name": key.title(), "presence_entities": presence or []}
     if alexa:

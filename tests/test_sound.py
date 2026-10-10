@@ -2,7 +2,7 @@
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 
 async def _start(hass, type_):
@@ -35,7 +35,7 @@ async def test_critical_alert_uses_the_sound(hass, freezer, notify, make_entry):
     await _start(hass, "washer")
     for _ in range(3):
         await advance(hass, freezer, minutes=5)
-    sound = notify["phone"][-1].data["data"]["push"]["sound"]
+    sound = sent(notify["phone"])[-1].data["data"]["push"]["sound"]
     assert sound == {"name": "reminder.wav", "critical": 1, "volume": 1.0}
 
 

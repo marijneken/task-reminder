@@ -2,7 +2,7 @@
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 
 async def _start(hass, type_):
@@ -17,7 +17,7 @@ async def test_title_is_fixed_and_body_says_what_is_due(hass, freezer, notify, m
     assert first["message"] == "Washer is due"
 
     await advance(hass, freezer, minutes=5)
-    again = [c.data for c in notify["phone"]][-1]
+    again = sent(notify["phone"])[-1].data
     assert again["title"] == "Task Reminder"
     assert again["message"] == "Washer is still waiting"
     assert notify["alexa"][0].data["message"] == "Washer is still waiting"  # spoken: no title

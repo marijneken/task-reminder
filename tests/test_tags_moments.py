@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, type_data
+from .conftest import advance, sent, type_data
 
 
 def _tag(hass, entity_id, tag_id):
@@ -75,7 +75,7 @@ async def test_good_moment_brings_the_next_reminder_forward(hass, freezer, notif
 
     await advance(hass, freezer, minutes=2)  # 3 minutes since the reminder, next due in 5
     await _motion(hass, "binary_sensor.stairs")
-    assert len(notify["phone"]) == 2  # spoke up early, at the next escalation level
+    assert len(sent(notify["phone"])) == 2  # spoke up early, at the next escalation level
     assert len(notify["alexa"]) == 1
 
 

@@ -37,6 +37,7 @@ from .const import (
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
     CONF_NOTIFICATION_SOUND,
+    CONF_NOTIFICATIONS_KEPT,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
@@ -46,6 +47,7 @@ from .const import (
     CONF_RING_SECONDS,
     CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
+    DEFAULT_NOTIFICATIONS_KEPT,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_RING_MINUTES,
@@ -60,6 +62,7 @@ from .const import (
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
+    MAX_NOTIFICATIONS_KEPT,
     MIN_RING_SECONDS,
     PUSH_DAILY_BUDGET,
     ROOM_RECENT,
@@ -226,11 +229,29 @@ class TaskManager:
         return timedelta(minutes=max(1, int(minutes)))
 
     async def _clear_notifications(self, task: Task) -> None:
-        """Remove everything this task has on the phones (its tag and the latest ring tag)."""
-        tags = [tag_for(task.id)]
-        if task.ring_tag:
-            tags.append(task.ring_tag)
+        """Remove everything this task has on the phones (its notifications and the away note)."""
+        tags = [tag_for(task.id), *task.tags]
+        task.tags = []
         await self.notifier.async_clear_tags(tags)
+
+    def _next_tag(self, task: Task) -> str:
+        """A tag of its own for every notification: a notification that reuses the tag of one
+        still on screen replaces it silently on iOS, which would make the repeat inaudible."""
+        task.ring_count += 1
+        return f"{tag_for(task.id)}_{task.ring_count}"
+
+    def _kept(self) -> int:
+        kept = self.settings.get(CONF_NOTIFICATIONS_KEPT) or DEFAULT_NOTIFICATIONS_KEPT
+        return max(1, min(int(kept), MAX_NOTIFICATIONS_KEPT))
+
+    async def _remember_sent(self, task: Task, tag: str) -> None:
+        """The new notification has been sent: remove the oldest ones beyond how many may stay.
+        With 1 the previous one goes right after the new one; with more they pile up."""
+        task.tags.append(tag)
+        excess = task.tags[: -self._kept()] if len(task.tags) > self._kept() else []
+        if excess:
+            task.tags = task.tags[len(excess) :]
+            await self.notifier.async_clear_tags(excess)
 
     def _stop_ringing(self, task: Task) -> None:
         task.ring_at = None
@@ -265,8 +286,7 @@ class TaskManager:
             return
 
         snoozes = task_type.snooze_minutes
-        task.ring_count += 1
-        tag = f"{tag_for(task.id)}_r{task.ring_count}"
+        tag = self._next_tag(task)
         delivered = await self.notifier.async_remind(
             task_id=task.id,
             message=task.extra.get("last_text") or f"{task.title} is due",
@@ -281,9 +301,7 @@ class TaskManager:
             tag=tag,
         )
         if delivered:
-            # The new one has been sent; now take the previous one away so the list stays at one.
-            await self.notifier.async_clear_tags([task.ring_tag or tag_for(task.id)])
-            task.ring_tag = tag
+            await self._remember_sent(task, tag)
         nxt = now + self._ring_interval(task_type)
         task.ring_at = nxt if nxt < task.ring_until else None
 
@@ -560,10 +578,12 @@ class TaskManager:
         text = task.message or (
             f"{task.title} is due" if task.level == 0 else f"{task.title} is still waiting"
         )
+        tag = self._next_tag(task)
         delivered = await self.notifier.async_remind(
             task_id=task.id,
             message=text,
             plan=plan,
+            tag=tag,
             time_critical=task_type.time_critical,
             can_snooze=snooze_for(task.snooze_count, snoozes) is not None,
             dismissable=self.is_dismissable(task_type),
@@ -581,9 +601,7 @@ class TaskManager:
             await self._pause_media(task)
             if task.level > len(snoozes):  # the 2nd reminder of the keeps-going stage
                 await self._turn_off_players(task)
-        if task.ring_tag:  # a re-triggered notification is still up: the regular one replaces it
-            await self.notifier.async_clear_tags([task.ring_tag])
-            task.ring_tag = None
+        await self._remember_sent(task, tag)
         task.held_reason = None
         task.status = TaskStatus.NOTIFYING
         task.last_notified_at = now
