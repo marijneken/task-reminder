@@ -553,8 +553,8 @@ const STYLE = `
   .list { display:flex; flex-direction:column; gap:8px; }
 
   .hero { display:flex; flex-wrap:wrap; gap:16px 28px; align-items:flex-end; justify-content:space-between;
-          background: linear-gradient(135deg, rgba(255,176,79,.16), rgba(238,75,43,.10)), var(--card-background-color);
-          border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; border: 1px solid var(--divider-color);
+          background: linear-gradient(135deg, rgba(0,200,230,.20), rgba(41,121,255,.14)), var(--card-background-color);
+          border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; border: 1px solid rgba(0,200,230,.38);
           box-shadow: var(--ha-card-box-shadow, none); }
   .hero-text { flex: 1 1 380px; min-width: 0; }
   .hero-label { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color: var(--secondary-text-color); margin-bottom:8px; }
@@ -566,6 +566,7 @@ const STYLE = `
   .chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
   .chip { padding: 4px 12px; font-size: 13px; border-radius: 14px; }
   .chip.on { background: rgba(238,75,43,.16); border-color: #ee4b2b; }
+  .hero .chip { background: rgba(0,0,0,.14); }
   .chip.start { padding-left: 8px; }
   .chip ha-icon { --mdc-icon-size: 16px; }
   .help { color: var(--secondary-text-color); font-size: 12px; }
