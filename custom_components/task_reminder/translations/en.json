@@ -16,7 +16,9 @@
           "notification_sound": "Notification sound (iPhone)",
           "turn_off_players": "Turn these off as a last resort",
           "ring_seconds": "Ring interval (seconds)",
-          "ring_minutes": "Ring for at most (minutes)"
+          "ring_minutes": "Ring for at most (minutes)",
+          "ring_swap_seconds": "Extra time per repeat (seconds)",
+          "flash_lights": "Flash these lights when it keeps going"
         },
         "data_description": {
           "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
@@ -25,7 +27,9 @@
           "notification_sound": "Pick a sound, or type the exact file name of one you imported in the Companion app (with extension). iOS system sounds (.caf) must first be imported once: in the app, Settings, Companion App, Notifications, Sounds, System tab, Import system sounds, then restart the phone. Empty uses the default sound. Critical alerts use it too.",
           "turn_off_players": "Typically your TV. When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if still on. Never while silencing is active.",
           "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
-          "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again."
+          "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again.",
+          "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
+          "flash_lights": "Lights that flash (a long flash, then back to how they were) with every reminder of the keeps-going stage, as a last annoyance. Never while silencing is active."
         }
       }
     },
@@ -49,7 +53,9 @@
           "notification_sound": "Notification sound (iPhone)",
           "turn_off_players": "Turn these off as a last resort",
           "ring_seconds": "Ring interval (seconds)",
-          "ring_minutes": "Ring for at most (minutes)"
+          "ring_minutes": "Ring for at most (minutes)",
+          "ring_swap_seconds": "Extra time per repeat (seconds)",
+          "flash_lights": "Flash these lights when it keeps going"
         }
       }
     }

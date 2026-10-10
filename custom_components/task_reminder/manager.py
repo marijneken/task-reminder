@@ -36,6 +36,7 @@ from .const import (
     ATTR_SORT_DATE,
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
+    CONF_FLASH_LIGHTS,
     CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
@@ -44,12 +45,14 @@ from .const import (
     CONF_QUIET_START,
     CONF_RING_MINUTES,
     CONF_RING_SECONDS,
+    CONF_RING_SWAP_SECONDS,
     CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_RING_MINUTES,
     DEFAULT_RING_SECONDS,
+    DEFAULT_RING_SWAP_SECONDS,
     DELIVERY_RETRY,
     DOMAIN,
     EVENT_FINISHED,
@@ -78,6 +81,7 @@ from .notifier import Notifier, tag_for
 from .policy import (
     ChannelPlan,
     channel_plan,
+    keeps_going,
     next_time_of_day,
     quiet_window_end,
     repeat_after,
@@ -221,6 +225,13 @@ class TaskManager:
         seconds = task_type.ring_seconds or self.settings.get(CONF_RING_SECONDS)
         return timedelta(seconds=max(MIN_RING_SECONDS, int(seconds or DEFAULT_RING_SECONDS)))
 
+    def _ring_swap(self) -> timedelta:
+        """Time the swap of the old and the new notification takes: added to every repeat after
+        the first, whose interval is counted from the reminder itself."""
+        value = self.settings.get(CONF_RING_SWAP_SECONDS)
+        seconds = DEFAULT_RING_SWAP_SECONDS if value is None else float(value)
+        return timedelta(seconds=max(0.0, seconds))
+
     def _ring_window(self) -> timedelta:
         minutes = self.settings.get(CONF_RING_MINUTES) or DEFAULT_RING_MINUTES
         return timedelta(minutes=max(1, int(minutes)))
@@ -293,7 +304,7 @@ class TaskManager:
         )
         if delivered:
             await self._remember_sent(task, tag)
-        nxt = now + self._ring_interval(task_type)
+        nxt = now + self._ring_interval(task_type) + self._ring_swap()
         task.ring_at = nxt if nxt < task.ring_until else None
 
     def flag_on(self, task_type: TaskType) -> bool:
@@ -592,6 +603,8 @@ class TaskManager:
             await self._pause_media(task)
             if task.level > len(snoozes):  # the 2nd reminder of the keeps-going stage
                 await self._turn_off_players(task)
+        if not light and keeps_going(task.level, snoozes):
+            await self._flash_lights()
         await self._remember_sent(task, tag)
         task.held_reason = None
         task.status = TaskStatus.NOTIFYING
@@ -719,6 +732,19 @@ class TaskManager:
         task.extra["turned_off"] = players
         if players:
             await self._media_call("turn_off", players)
+
+    async def _flash_lights(self) -> None:
+        """An annoyance of the keeps-going stage: flash the chosen lights with every reminder
+        (long flash, the light returns to how it was). Never while silencing is active."""
+        lights = self.settings.get(CONF_FLASH_LIGHTS) or []
+        if not lights or self.silence.mode != SILENCE_OFF:
+            return
+        try:
+            await self.hass.services.async_call(
+                "light", "turn_on", {"entity_id": lights, "flash": "long"}, blocking=True
+            )
+        except Exception:
+            _LOGGER.warning("Could not flash %s", lights, exc_info=True)
 
     async def _resume_media(self, task: Task) -> None:
         """Resume the players this task paused, unless someone else already did."""

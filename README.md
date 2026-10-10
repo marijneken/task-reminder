@@ -63,6 +63,10 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
   a sound that lives on your phone: check the file on your Mac (Finder, Get Info, or QuickTime). iOS plays at
   most 30 seconds of a custom sound.
 - A reminder rings for at most **ring for** minutes (default 3); the next regular reminder rings again.
+- The first repeat comes exactly one ring interval after the reminder. Every repeat after that waits
+  **extra time per repeat** longer (default 1.5 seconds, a rough guess): sending the new notification and removing
+  the old one takes a moment, so those sounds would otherwise start too early. Adjust it until the repeats follow the
+  sound without a gap or overlap.
 - Every reminder and every re-trigger is a **new notification** with a tag of its own, and the previous one is
   removed right after the new one is sent. Both matter on iOS: a notification that replaces one with the same
   tag makes no sound, and neither does a new one while the old one is still on screen. (So the old notification
@@ -87,7 +91,10 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
 
 Choose media players in the integration settings to have whatever is playing on them paused when a
 reminder reaches the other devices (the 3rd notification); it resumes when the task ends (done, dismissed or
-expired), unless you already resumed it yourself. As a last resort you can choose media players (your TV) to **turn off**: once the snoozes are used up and the
+expired), unless you already resumed it yourself. You can also choose **lights to flash**: with every reminder of the keeps-going stage they flash (a long flash,
+then back to how they were) as one more annoyance. Never while silencing is active and never for the light ladder.
+
+As a last resort you can choose media players (your TV) to **turn off**: once the snoozes are used up and the
 second keeps-going reminder is sent, those that are still on are turned off, once per task. Never while silencing
 is active, never for the light ladder, and they are not turned back on afterwards. Dismissable tasks with a fill flag that is off use a lighter
 ladder (phone and Alexa only) and never pause media. If no notify service is configured, a Repairs warning says so.

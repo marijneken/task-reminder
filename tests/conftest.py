@@ -98,6 +98,7 @@ def make_entry(hass: HomeAssistant, notify):
                 "extra_services": ["mobile_app_ipad"],
                 "quiet_start": "23:00:00",
                 "quiet_end": "07:00:00",
+                "ring_swap_seconds": 0,  # tests step the clock in exact beats; None = the real default
                 **settings,
             },
             subentries_data=list(types),

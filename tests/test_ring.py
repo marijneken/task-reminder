@@ -280,3 +280,53 @@ async def test_ringing_survives_a_restart(hass, freezer, notify, make_entry):
     before = len(reminders(notify))
     await advance(hass, freezer, seconds=12)
     assert len(reminders(notify)) > before
+
+
+async def test_second_and_later_repeats_wait_for_the_swap_time(hass, freezer, notify, make_entry):
+    await make_entry(alarm(), ring_swap_seconds=1.5)
+    await _start(hass)
+    await advance(
+        hass, freezer, seconds=12
+    )  # first repeat: exactly the interval after the reminder
+    assert len(reminders(notify)) == 2
+
+    await advance(hass, freezer, seconds=13)  # 25 s: the second repeat is not due before 25.5 s
+    assert len(reminders(notify)) == 2
+    await advance(hass, freezer, seconds=0.5)  # 25.5 s = 12 + 12 + 1.5
+    assert len(reminders(notify)) == 3
+
+    await advance(hass, freezer, seconds=13)  # 38.5 s: third repeat not yet (due at 39 s)
+    assert len(reminders(notify)) == 3
+    await advance(hass, freezer, seconds=0.5)
+    assert len(reminders(notify)) == 4
+
+
+async def test_the_real_default_swap_time_is_one_and_a_half_seconds(
+    hass, freezer, notify, make_entry
+):
+    await make_entry(alarm(), ring_swap_seconds=None)  # setting absent: the default applies
+    await _start(hass)
+    await advance(hass, freezer, seconds=12)
+    await advance(hass, freezer, seconds=13)
+    assert len(reminders(notify)) == 2
+    await advance(hass, freezer, seconds=0.5)
+    assert len(reminders(notify)) == 3
+
+
+async def test_a_swap_time_of_zero_keeps_the_plain_interval(hass, freezer, notify, make_entry):
+    await make_entry(alarm(), ring_swap_seconds=0)
+    await _start(hass)
+    await advance(hass, freezer, seconds=12)
+    await advance(hass, freezer, seconds=12)
+    assert len(reminders(notify)) == 3
+
+
+async def test_swap_time_applies_to_a_per_task_interval_too(hass, freezer, notify, make_entry):
+    await make_entry(type_data("slow", ring=True, ring_seconds=30), ring_swap_seconds=2)
+    await _start(hass, "slow")
+    await advance(hass, freezer, seconds=30)
+    assert len(reminders(notify)) == 2
+    await advance(hass, freezer, seconds=31)  # the next one is due at 62 s
+    assert len(reminders(notify)) == 2
+    await advance(hass, freezer, seconds=1)
+    assert len(reminders(notify)) == 3

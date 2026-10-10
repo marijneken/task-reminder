@@ -34,6 +34,7 @@ from .const import (
     CONF_DURATION_MINUTES,
     CONF_EXTRA_SERVICES,
     CONF_FLAG_ENTITY,
+    CONF_FLASH_LIGHTS,
     CONF_GOOD_MOMENT_ENTITIES,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
@@ -50,6 +51,7 @@ from .const import (
     CONF_RING,
     CONF_RING_MINUTES,
     CONF_RING_SECONDS,
+    CONF_RING_SWAP_SECONDS,
     CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
@@ -69,6 +71,7 @@ from .const import (
     DEFAULT_REPEAT_MINUTES,
     DEFAULT_RING_MINUTES,
     DEFAULT_RING_SECONDS,
+    DEFAULT_RING_SWAP_SECONDS,
     DEFAULT_SNOOZE_MINUTES,
     DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
@@ -80,12 +83,12 @@ from .const import (
 from .policy import parse_minutes
 
 
-def _number(lo: int, hi: int, unit: str) -> selector.NumberSelector:
+def _number(lo: float, hi: float, unit: str, step: float = 1) -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=lo,
             max=hi,
-            step=1,
+            step=step,
             mode=selector.NumberSelectorMode.BOX,
             unit_of_measurement=unit,
         )
@@ -134,6 +137,12 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
             vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(5, 120, "s"),
             vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(1, 30, "min"),
+            vol.Optional(CONF_RING_SWAP_SECONDS, default=DEFAULT_RING_SWAP_SECONDS): _number(
+                0, 10, "s", step=0.1
+            ),
+            vol.Optional(CONF_FLASH_LIGHTS, default=[]): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="light", multiple=True)
+            ),
             vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
