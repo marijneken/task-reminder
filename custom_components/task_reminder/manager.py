@@ -43,6 +43,7 @@ from .const import (
     CONF_QUIET_END,
     CONF_QUIET_START,
     CONF_TAP_URL,
+    CONF_TURN_OFF_PLAYERS,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DELIVERY_RETRY,
@@ -473,6 +474,8 @@ class TaskManager:
 
         if plan.extra:
             await self._pause_media(task)
+            if task.level > len(snoozes):  # the 2nd reminder of the keeps-going stage
+                await self._turn_off_players(task)
         task.held_reason = None
         task.status = TaskStatus.NOTIFYING
         task.last_notified_at = now
@@ -576,6 +579,21 @@ class TaskManager:
         task.extra["paused"] = players
         if players:
             await self._media_call("media_pause", players)
+
+    async def _turn_off_players(self, task: Task) -> None:
+        """Last step of the ladder: turn the chosen TVs off. Once per task, never while
+        silencing is on (cinema, teaching), and only what is on right now."""
+        if "turned_off" in task.extra or self.silence.mode != SILENCE_OFF:
+            return
+        players = [
+            p
+            for p in self.settings.get(CONF_TURN_OFF_PLAYERS, [])
+            if (state := self.hass.states.get(p))
+            and state.state not in ("off", "unavailable", "unknown")
+        ]
+        task.extra["turned_off"] = players
+        if players:
+            await self._media_call("turn_off", players)
 
     async def _resume_media(self, task: Task) -> None:
         """Resume the players this task paused, unless someone else already did."""

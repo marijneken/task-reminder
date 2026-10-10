@@ -62,7 +62,9 @@ exact file name of any other sound. Critical alerts use the same sound. Empty ke
 
 Choose media players in the integration settings to have whatever is playing on them paused when a
 reminder reaches the other devices (the 3rd notification); it resumes when the task ends (done, dismissed or
-expired), unless you already resumed it yourself. Dismissable tasks with a fill flag that is off use a lighter
+expired), unless you already resumed it yourself. As a last resort you can choose media players (your TV) to **turn off**: once the snoozes are used up and the
+second keeps-going reminder is sent, those that are still on are turned off, once per task. Never while silencing
+is active, never for the light ladder, and they are not turned back on afterwards. Dismissable tasks with a fill flag that is off use a lighter
 ladder (phone and Alexa only) and never pause media. If no notify service is configured, a Repairs warning says so.
 
 Snoozes are limited (default 10, 5, 3 minutes); after the last one the Snooze
