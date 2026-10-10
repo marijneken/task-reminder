@@ -51,6 +51,27 @@ exact file name of any other sound. Critical alerts use the same sound. Empty ke
 - Always the full file name with extension. Android uses notification channels instead (change the sound in the
   channel settings of the app).
 
+## Ringing like an alarm
+
+A single notification plays its sound once and is easy to ignore. Tasks that **ring** keep re-triggering the
+sound on the phone, like a timer on Alexa, until you **snooze, complete or dismiss** them:
+
+- Turn on **Ring until answered** per task type. Reminders and timers from `task_reminder.remind` ring by
+  default (`ring: false` to opt out).
+- Every **ring interval** seconds (integration settings, default 12; or per task type) the phone gets the
+  reminder again. Set it to about the length of your sound plus a second or two. I cannot read the length of
+  a sound that lives on your phone: check the file on your Mac (Finder, Get Info, or QuickTime). iOS plays at
+  most 30 seconds of a custom sound.
+- A reminder rings for at most **ring for** minutes (default 3); the next regular reminder rings again.
+- **Ring style**: *Refresh* (default) sends a new notification each time and removes the previous one, so the sound
+  surely plays and the list stays at one. *Replace* overwrites the same notification in place, which only helps if
+  iOS plays the sound for a replacement: try both with the Test reminder button.
+- Only the phone rings, never Alexa or your other devices. Critical alerts are not used for ringing tasks: iOS
+  cannot replace them, so they would fill the list. The notification then follows your silent switch and Focus
+  (time-sensitive reminders get through Focus if the Companion app is allowed to).
+- The Companion app allows **500 notifications a day per device** (critical alerts and clear commands do not
+  count). Ringing stops at 350 pushes for the day, so the rest keep working, and a Repairs message says so.
+
 ## How it escalates
 
 | Notification | Goes to |

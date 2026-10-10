@@ -104,6 +104,7 @@ def _task_dict(mgr: TaskManager, task: Task) -> dict[str, Any]:
         "snooze_next": snooze_for(task.snooze_count, snoozes),
         "dismissable": bool(task_type and mgr.is_dismissable(task_type)),
         "held_reason": task.held_reason,
+        "ringing": bool(task.ring_at and task.status.value == "notifying"),
         "waits_for": task_type.due_entity if task_type and task.due_at is None else None,
     }
 

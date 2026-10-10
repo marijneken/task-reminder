@@ -376,6 +376,7 @@ class TaskReminderPanel extends HTMLElement {
     const pips = Math.min(t.level, PIPS.length);
     const snoozeLabel = t.snooze_next ? `Snooze ${t.snooze_next} min` : "";
     const badges = [];
+    if (t.ringing) badges.push(`<span class="badge ring">ringing</span>`);
     if (t.keeps_going) badges.push(`<span class="badge fin">keeps going</span>`);
     if (t.snooze_total && t.snooze_count)
       badges.push(`<span class="badge">snoozed ${t.snooze_count}/${t.snooze_total}</span>`);
@@ -610,6 +611,7 @@ const STYLE = `
   .badge.soon { background: rgba(3,169,244,.18); color: var(--primary-color); }
   .badge.auto { background: rgba(156,39,176,.18); color: #ce93d8; }
   .badge.warn { background: rgba(255,152,0,.15); color: var(--warning-color, #ff9800); }
+  .badge.ring { background: rgba(0,200,230,.18); color: #4dd0e1; }
   .badge.fin { background: rgba(238,75,43,.16); color: #ff8a65; }
 
   .banner { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding: 10px 14px; margin-bottom: 14px; border-radius: 12px;

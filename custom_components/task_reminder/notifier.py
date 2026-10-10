@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -43,6 +44,8 @@ class Notifier:
         self.alexa = alexa
         self.extra = extra
         self.tap_url = tap_url or None
+        # Called for every push that counts against the Companion app's daily limit.
+        self.on_push: Callable[[], None] | None = None
 
     @property
     def configured(self) -> bool:
@@ -55,7 +58,17 @@ class Notifier:
         except Exception:
             _LOGGER.warning("Notify service notify.%s failed", service, exc_info=True)
             return False
+        if self.on_push and service in (*self.phone, *self.extra) and self._counts(payload):
+            self.on_push()
         return True
+
+    @staticmethod
+    def _counts(payload: dict[str, Any]) -> bool:
+        """Commands (clear_notification) and critical alerts do not count towards the limit."""
+        if payload.get("message") == "clear_notification":
+            return False
+        sound = (payload.get("data") or {}).get("push", {}).get("sound")
+        return not (isinstance(sound, dict) and sound.get("critical"))
 
     async def _send_all(self, calls: list[tuple[str, dict[str, Any]]]) -> int:
         results = await asyncio.gather(*(self._call(s, p) for s, p in calls))
@@ -93,10 +106,11 @@ class Notifier:
         dismissable: bool,
         sound: str | None = None,
         alexa_targets: list[str] | None = None,
+        tag: str | None = None,
     ) -> int:
         """Send a reminder along the plan. Returns how many services accepted it."""
         data: dict[str, Any] = {
-            "tag": tag_for(task_id),
+            "tag": tag or tag_for(task_id),
             "group": GROUP,
             "actions": self._actions(task_id, can_snooze, dismissable),
             **self._tap(),
@@ -155,5 +169,12 @@ class Notifier:
 
     async def async_clear(self, task_id: str) -> None:
         """Remove a task's notification from the phones."""
-        payload = {"message": "clear_notification", "data": {"tag": tag_for(task_id)}}
-        await self._send_all([(s, dict(payload)) for s in [*self.phone, *self.extra]])
+        await self.async_clear_tags([tag_for(task_id)])
+
+    async def async_clear_tags(self, tags: list[str]) -> None:
+        """Remove notifications by tag (a ringing task may have used several)."""
+        calls = []
+        for tag in tags:
+            payload = {"message": "clear_notification", "data": {"tag": tag}}
+            calls += [(s, dict(payload)) for s in [*self.phone, *self.extra]]
+        await self._send_all(calls)

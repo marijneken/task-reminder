@@ -47,6 +47,10 @@ from .const import (
     CONF_QUIET_START,
     CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
+    CONF_RING,
+    CONF_RING_MINUTES,
+    CONF_RING_SECONDS,
+    CONF_RING_STYLE,
     CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
@@ -64,15 +68,31 @@ from .const import (
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_REPEAT_MINUTES,
+    DEFAULT_RING_MINUTES,
+    DEFAULT_RING_SECONDS,
     DEFAULT_SNOOZE_MINUTES,
     DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
     DOMAIN,
+    RING_STYLE_REFRESH,
+    RING_STYLE_REPLACE,
     SOUND_CHOICES,
     SUBENTRY_ROOM,
     SUBENTRY_TYPE,
 )
 from .policy import parse_minutes
+
+
+def _number(lo: int, hi: int, unit: str) -> selector.NumberSelector:
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=lo,
+            max=hi,
+            step=1,
+            mode=selector.NumberSelectorMode.BOX,
+            unit_of_measurement=unit,
+        )
+    )
 
 
 def _sound_selector() -> selector.SelectSelector:
@@ -115,6 +135,21 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             ),
             vol.Optional(CONF_TAP_URL): selector.TextSelector(),
             vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
+            vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(5, 120, "s"),
+            vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(1, 30, "min"),
+            vol.Optional(CONF_RING_STYLE, default=RING_STYLE_REFRESH): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(
+                            value=RING_STYLE_REFRESH, label="Refresh (new notification each time)"
+                        ),
+                        selector.SelectOptionDict(
+                            value=RING_STYLE_REPLACE, label="Replace (same notification, in place)"
+                        ),
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
@@ -199,6 +234,8 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
             0, 14, "d"
         ),
         vol.Optional(CONF_SOUND): _sound_selector(),
+        vol.Optional(CONF_RING, default=False): selector.BooleanSelector(),
+        vol.Optional(CONF_RING_SECONDS): _number(5, 120, "s"),
         vol.Optional(CONF_START_ENTITY): entity,
         vol.Optional(CONF_START_TAG): tag,
         vol.Optional(CONF_DONE_TAG): tag,

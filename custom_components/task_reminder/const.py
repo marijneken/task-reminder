@@ -20,6 +20,10 @@ CONF_EXTRA_SERVICES = "extra_services"
 CONF_PAUSE_PLAYERS = "pause_players"
 CONF_TURN_OFF_PLAYERS = "turn_off_players"
 CONF_TAP_URL = "tap_url"
+CONF_RING = "ring"  # per task type: keep re-triggering the sound until answered
+CONF_RING_SECONDS = "ring_seconds"  # hub default and per task type override
+CONF_RING_MINUTES = "ring_minutes"  # how long one reminder keeps ringing at most
+CONF_RING_STYLE = "ring_style"
 CONF_PRESENCE_ENTITIES = "presence_entities"
 CONF_ALEXA_SERVICE = "alexa_service"
 CONF_NOTIFICATION_SOUND = "notification_sound"
@@ -128,6 +132,16 @@ SOUND_CHOICES = [
 ]
 
 HISTORY_LIMIT = 10
+
+# Ringing: re-send the reminder so the sound plays again until it is answered.
+DEFAULT_RING_SECONDS = 12  # about the length of the sound
+MIN_RING_SECONDS = 5
+DEFAULT_RING_MINUTES = 3
+RING_STYLE_REFRESH = "refresh"  # new notification each time, the previous one is cleared
+RING_STYLE_REPLACE = "replace"  # same tag: iOS replaces it in place
+# The Companion app allows 500 pushes a day per device (critical alerts and commands such as
+# clear_notification do not count). Ringing stops here so other notifications keep working.
+PUSH_DAILY_BUDGET = 350
 STORAGE_VERSION = 1
 STORAGE_KEY = DOMAIN
 

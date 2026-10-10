@@ -62,7 +62,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return {"task_id": task.id}
 
     async def remind(call: ServiceCall) -> ServiceResponse:
-        overrides = {k: call.data[k] for k in ("time_critical", "dismissable") if k in call.data}
+        overrides = {
+            k: call.data[k] for k in ("time_critical", "dismissable", "ring") if k in call.data
+        }
         task = await _manager(hass).async_start_task(
             ADHOC_KEY,
             title=call.data["title"],
@@ -114,6 +116,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 vol.Exclusive("due_at", "due"): cv.datetime,
                 vol.Optional("time_critical"): cv.boolean,
                 vol.Optional("dismissable"): cv.boolean,
+                vol.Optional("ring"): cv.boolean,
             }
         ),
         supports_response=SupportsResponse.OPTIONAL,

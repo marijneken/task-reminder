@@ -37,6 +37,20 @@ async def test_snapshot_describes_running_tasks(hass, hass_ws_client, make_entry
     assert snap["history"] == []
 
 
+async def test_snapshot_marks_ringing_tasks(hass, hass_ws_client, make_entry):
+    await make_entry(type_data("alarm", ring=True), type_data("quiet"))
+    await hass.services.async_call(DOMAIN, "start", {"type": "alarm"}, blocking=True)
+    await hass.services.async_call(DOMAIN, "start", {"type": "quiet"}, blocking=True)
+    client = await hass_ws_client(hass)
+    by_type = {t["type"]: t for t in (await _snapshot(client))["tasks"]}
+    assert by_type["alarm"]["ringing"] is True
+    assert by_type["quiet"]["ringing"] is False
+
+    await hass.services.async_call(DOMAIN, "snooze", {"type": "alarm"}, blocking=True)
+    update = (await client.receive_json())["event"]
+    assert {t["type"]: t["ringing"] for t in update["tasks"]}["alarm"] is False
+
+
 async def test_snapshot_says_which_room_you_are_in(hass, hass_ws_client, make_entry):
     from .conftest import room_data
 

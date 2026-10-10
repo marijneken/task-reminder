@@ -170,3 +170,20 @@ async def test_unknown_person_state_is_not_away(hass, freezer, notify, make_entr
     hass.states.async_set("person.marijn", "unknown")
     await _start(hass, "washer")
     assert len(notify["phone"]) == 1
+
+
+async def test_silence_that_expires_with_no_tasks_still_updates_everything(
+    hass, freezer, make_entry, hass_storage
+):
+    await make_entry(type_data("washer"))
+    until = datetime(2026, 10, 9, 13, 0, tzinfo=UTC)
+    await hass.services.async_call(
+        DOMAIN, "silence", {"mode": "silent", "until": until}, blocking=True
+    )
+    assert hass.states.get("select.task_reminder_silencing").state == "silent"
+    assert hass_storage["task_reminder"]["data"]["silence"]["mode"] == "silent"
+
+    await advance(hass, freezer, hours=1)  # no task is running at all
+
+    assert hass.states.get("select.task_reminder_silencing").state == "off"
+    assert hass_storage["task_reminder"]["data"]["silence"]["mode"] == "off"

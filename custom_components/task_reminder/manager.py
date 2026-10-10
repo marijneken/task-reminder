@@ -42,10 +42,15 @@ from .const import (
     CONF_PHONE_SERVICES,
     CONF_QUIET_END,
     CONF_QUIET_START,
+    CONF_RING_MINUTES,
+    CONF_RING_SECONDS,
+    CONF_RING_STYLE,
     CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
+    DEFAULT_RING_MINUTES,
+    DEFAULT_RING_SECONDS,
     DELIVERY_RETRY,
     DOMAIN,
     EVENT_FINISHED,
@@ -56,6 +61,9 @@ from .const import (
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
+    MIN_RING_SECONDS,
+    PUSH_DAILY_BUDGET,
+    RING_STYLE_REPLACE,
     ROOM_RECENT,
     SIGNAL_UPDATE,
     SILENCE_OFF,
@@ -67,8 +75,9 @@ from .const import (
     SUMMARY_GRACE,
 )
 from .models import ADHOC_TYPE, Room, Silence, Task, TaskStatus, TaskType
-from .notifier import Notifier
+from .notifier import Notifier, tag_for
 from .policy import (
+    ChannelPlan,
     channel_plan,
     next_time_of_day,
     quiet_window_end,
@@ -91,6 +100,7 @@ class TaskManager:
         self.tasks: dict[str, Task] = {}
         self.silence = Silence()
         self.history: list[dict[str, str]] = []  # newest first
+        self.pushes: dict[str, Any] = {"day": "", "n": 0}  # pushes sent today (UTC)
         self.marks: dict[str, str] = {}  # type key -> collection date already started
         self.pending_until: datetime | None = None
         self.types: dict[str, TaskType] = {}
@@ -103,6 +113,7 @@ class TaskManager:
         self._room_seen: dict[str, datetime] = {}  # room key -> last time presence was seen
         self._reload_types()
         self.notifier = self._build_notifier()
+        self.notifier.on_push = self._note_push
 
     # -- settings ---------------------------------------------------------
 
@@ -190,6 +201,91 @@ class TaskManager:
         room = self.current_room()
         return [room.alexa_service] if room and room.alexa_service else None
 
+    # -- ringing: keep re-triggering the sound until the task is answered ----------
+
+    def _note_push(self) -> None:
+        """Count a push against the Companion app's daily limit (resets at midnight UTC)."""
+        today = dt_util.utcnow().date().isoformat()
+        if self.pushes.get("day") != today:
+            self.pushes = {"day": today, "n": 0}
+            ir.async_delete_issue(self.hass, DOMAIN, "ring_budget")
+        self.pushes["n"] += 1
+
+    def pushes_today(self) -> int:
+        """Pushes sent today that count against the daily limit."""
+        if self.pushes.get("day") != dt_util.utcnow().date().isoformat():
+            return 0
+        return int(self.pushes.get("n", 0))
+
+    def _ring_interval(self, task_type: TaskType) -> timedelta:
+        """Seconds between re-triggers: about the length of the chosen sound."""
+        seconds = task_type.ring_seconds or self.settings.get(CONF_RING_SECONDS)
+        return timedelta(seconds=max(MIN_RING_SECONDS, int(seconds or DEFAULT_RING_SECONDS)))
+
+    def _ring_window(self) -> timedelta:
+        minutes = self.settings.get(CONF_RING_MINUTES) or DEFAULT_RING_MINUTES
+        return timedelta(minutes=max(1, int(minutes)))
+
+    async def _clear_notifications(self, task: Task) -> None:
+        """Remove everything this task has on the phones (its tag and the latest ring tag)."""
+        tags = [tag_for(task.id)]
+        if task.ring_tag:
+            tags.append(task.ring_tag)
+        await self.notifier.async_clear_tags(tags)
+
+    def _stop_ringing(self, task: Task) -> None:
+        task.ring_at = None
+        task.ring_until = None
+
+    async def _ring(self, task: Task, now: datetime) -> None:
+        """Re-send the last reminder to the phone so its sound plays again."""
+        task_type = self._type_of(task)
+        if task_type is None or task.status is not TaskStatus.NOTIFYING:
+            self._stop_ringing(task)
+            return
+        if task.ring_until is None or now >= task.ring_until:
+            self._stop_ringing(task)
+            return
+        if self.pushes_today() >= PUSH_DAILY_BUDGET:
+            _LOGGER.warning("Not ringing %s: %s pushes sent today", task.title, self.pushes_today())
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                "ring_budget",
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="ring_budget",
+                translation_placeholders={"count": str(self.pushes_today())},
+            )
+            self._stop_ringing(task)
+            return
+
+        refresh = self.settings.get(CONF_RING_STYLE) != RING_STYLE_REPLACE
+        snoozes = task_type.snooze_minutes
+        tag = None
+        if refresh:
+            task.ring_count += 1
+            tag = f"{tag_for(task.id)}_r{task.ring_count}"
+        delivered = await self.notifier.async_remind(
+            task_id=task.id,
+            message=task.extra.get("last_text") or f"{task.title} is due",
+            plan=ChannelPlan(phone=True, alexa=False, extra=False, critical=False),
+            time_critical=task_type.time_critical,
+            can_snooze=snooze_for(task.snooze_count, snoozes) is not None,
+            dismissable=self.is_dismissable(task_type),
+            sound=task_type.sound
+            or (self.settings.get(CONF_NOTIFICATION_SOUND) or "").strip()
+            or None,
+            alexa_targets=[],
+            tag=tag,
+        )
+        if refresh and delivered:
+            # The new one is on the phone; take the previous one away so the list stays at one.
+            await self.notifier.async_clear_tags([task.ring_tag or tag_for(task.id)])
+            task.ring_tag = tag
+        nxt = now + self._ring_interval(task_type)
+        task.ring_at = nxt if nxt < task.ring_until else None
+
     def flag_on(self, task_type: TaskType) -> bool:
         """The type's fill flag (e.g. "bin has waste") is on."""
         state = self.hass.states.get(task_type.flag_entity) if task_type.flag_entity else None
@@ -216,6 +312,7 @@ class TaskManager:
         self.silence = Silence.from_dict(data.get("silence"))
         self.marks = dict(data.get("marks", {}))
         self.history = list(data.get("history", []))
+        self.pushes = dict(data.get("pushes") or self.pushes)
         self._update_notify_issue()
         self._subscribe()
 
@@ -348,6 +445,7 @@ class TaskManager:
                 "silence": self.silence.to_dict(),
                 "marks": self.marks,
                 "history": self.history,
+                "pushes": self.pushes,
             }
         )
 
@@ -364,6 +462,9 @@ class TaskManager:
         if not self._started:
             return
         times = [t.next_at for t in self.tasks.values() if t.next_at]
+        times += [
+            t.ring_at for t in self.tasks.values() if t.ring_at and t.status is TaskStatus.NOTIFYING
+        ]
         if self.silence.mode != SILENCE_OFF and self.silence.until:
             times.append(self.silence.until)
         if not times:
@@ -395,7 +496,10 @@ class TaskManager:
             for task in sorted(self.tasks.values(), key=lambda t: t.next_at or now):
                 if task.next_at and task.next_at <= now and task.id in self.tasks:
                     await self._fire(task, now)
-                await self._commit()
+            for task in list(self.tasks.values()):
+                if task.ring_at and task.ring_at <= now:
+                    await self._ring(task, now)
+            await self._commit()
 
     def _away(self) -> bool:
         person = self.settings.get(CONF_PERSON)
@@ -452,6 +556,9 @@ class TaskManager:
 
         snoozes = task_type.snooze_minutes
         plan = channel_plan(task.level, snoozes, self.silence.mode, light=light)
+        if task_type.ring:
+            # iOS cannot replace critical alerts, so ringing would fill the list with them.
+            plan = replace(plan, critical=False)
         text = task.message or (
             f"{task.title} is due" if task.level == 0 else f"{task.title} is still waiting"
         )
@@ -476,6 +583,9 @@ class TaskManager:
             await self._pause_media(task)
             if task.level > len(snoozes):  # the 2nd reminder of the keeps-going stage
                 await self._turn_off_players(task)
+        if task.ring_tag:  # a re-triggered notification is still up: the regular one replaces it
+            await self.notifier.async_clear_tags([task.ring_tag])
+            task.ring_tag = None
         task.held_reason = None
         task.status = TaskStatus.NOTIFYING
         task.last_notified_at = now
@@ -485,6 +595,13 @@ class TaskManager:
                 task.level, snoozes, task_type.repeat_minutes, task_type.keeps_going_minutes
             )
         )
+        if task_type.ring:
+            task.extra["last_text"] = text
+            task.ring_until = min(now + self._ring_window(), task.next_at)
+            first = now + self._ring_interval(task_type)
+            task.ring_at = first if first < task.ring_until else None
+        else:
+            self._stop_ringing(task)
 
     async def _release_silent(self, now: datetime) -> None:
         """A silent period ended (or was cancelled): deliver what piled up."""
@@ -626,7 +743,7 @@ class TaskManager:
             },
         )
         del self.history[HISTORY_LIMIT:]
-        await self.notifier.async_clear(task.id)
+        await self._clear_notifications(task)
         self.hass.bus.async_fire(
             EVENT_FINISHED,
             {"task_id": task.id, "type": task.type_key, "title": task.title, "outcome": outcome},
@@ -708,9 +825,10 @@ class TaskManager:
                 if minutes is None:
                     raise ServiceValidationError(f"{task.title} has no snoozes left")
                 task.status = TaskStatus.SNOOZED
+                self._stop_ringing(task)
                 task.snooze_count += 1
                 task.next_at = now + timedelta(minutes=minutes)
-                await self.notifier.async_clear(task.id)
+                await self._clear_notifications(task)
             await self._commit()
 
     # -- silencing --------------------------------------------------------

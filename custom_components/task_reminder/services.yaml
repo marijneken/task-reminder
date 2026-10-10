@@ -43,6 +43,10 @@ remind:
       default: false
       selector:
         boolean:
+    ring:
+      default: true
+      selector:
+        boolean:
 done:
   fields:
     task_id:

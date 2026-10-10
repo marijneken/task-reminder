@@ -32,6 +32,8 @@ from .const import (
     CONF_PRESENCE_ENTITIES,
     CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
+    CONF_RING,
+    CONF_RING_SECONDS,
     CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
@@ -76,6 +78,8 @@ class TaskType:
     then_start: str | None = None
     flag_entity: str | None = None
     sound: str | None = None
+    ring: bool = False
+    ring_seconds: int | None = None
     start_tag: str | None = None
     done_tag: str | None = None
     good_moment_entities: tuple[str, ...] = ()
@@ -113,6 +117,8 @@ class TaskType:
             then_start=data.get(CONF_THEN_START) or None,
             flag_entity=data.get(CONF_FLAG_ENTITY) or None,
             sound=(data.get(CONF_SOUND) or "").strip() or None,
+            ring=bool(data.get(CONF_RING, False)),
+            ring_seconds=int(data[CONF_RING_SECONDS]) if data.get(CONF_RING_SECONDS) else None,
             start_tag=data.get(CONF_START_TAG) or None,
             done_tag=data.get(CONF_DONE_TAG) or None,
             good_moment_entities=tuple(data.get(CONF_GOOD_MOMENT_ENTITIES) or ()),
@@ -141,6 +147,7 @@ ADHOC_TYPE = TaskType(
     dismissable=False,
     time_critical=True,
     single_instance=False,
+    ring=True,  # a timer or alarm: keeps going off until you stop it
 )
 
 
@@ -199,6 +206,10 @@ class Task:
     held_reason: str | None = None
     away_notified: bool = False
     last_notified_at: datetime | None = None
+    ring_at: datetime | None = None  # next re-trigger of the sound
+    ring_until: datetime | None = None  # stop re-triggering after this
+    ring_tag: str | None = None  # tag of the latest re-triggered notification (refresh style)
+    ring_count: int = 0
     extra: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -217,6 +228,10 @@ class Task:
             "held_reason": self.held_reason,
             "away_notified": self.away_notified,
             "last_notified_at": _dump(self.last_notified_at),
+            "ring_at": _dump(self.ring_at),
+            "ring_until": _dump(self.ring_until),
+            "ring_tag": self.ring_tag,
+            "ring_count": self.ring_count,
             "extra": self.extra,
         }
 
@@ -237,6 +252,10 @@ class Task:
             held_reason=data.get("held_reason"),
             away_notified=data.get("away_notified", False),
             last_notified_at=_load(data.get("last_notified_at")),
+            ring_at=_load(data.get("ring_at")),
+            ring_until=_load(data.get("ring_until")),
+            ring_tag=data.get("ring_tag"),
+            ring_count=data.get("ring_count", 0),
             extra=data.get("extra", {}),
         )
 
