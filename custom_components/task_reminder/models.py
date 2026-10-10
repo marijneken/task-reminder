@@ -210,6 +210,7 @@ class Task:
     ring_until: datetime | None = None  # stop re-triggering after this
     ring_tag: str | None = None  # tag of the latest re-triggered notification (refresh style)
     ring_count: int = 0
+    ring_stale: list[str] = field(default_factory=list)  # tags waiting to be cleared
     extra: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -232,6 +233,7 @@ class Task:
             "ring_until": _dump(self.ring_until),
             "ring_tag": self.ring_tag,
             "ring_count": self.ring_count,
+            "ring_stale": self.ring_stale,
             "extra": self.extra,
         }
 
@@ -256,6 +258,7 @@ class Task:
             ring_until=_load(data.get("ring_until")),
             ring_tag=data.get("ring_tag"),
             ring_count=data.get("ring_count", 0),
+            ring_stale=list(data.get("ring_stale", [])),
             extra=data.get("extra", {}),
         )
 

@@ -63,14 +63,16 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
   a sound that lives on your phone: check the file on your Mac (Finder, Get Info, or QuickTime). iOS plays at
   most 30 seconds of a custom sound.
 - A reminder rings for at most **ring for** minutes (default 3); the next regular reminder rings again.
-- **Ring style**: *Refresh* (default) sends a new notification each time and removes the previous one, so the sound
-  surely plays and the list stays at one. *Replace* overwrites the same notification in place, which only helps if
-  iOS plays the sound for a replacement: try both with the Test reminder button.
-- Only the phone rings, never Alexa or your other devices. Critical alerts are not used for ringing tasks: iOS
-  cannot replace them, so they would fill the list. The notification then follows your silent switch and Focus
-  (time-sensitive reminders get through Focus if the Companion app is allowed to).
-- The Companion app allows **500 notifications a day per device** (critical alerts and clear commands do not
-  count). Ringing stops at 350 pushes for the day, so the rest keep working, and a Repairs message says so.
+- Each re-trigger is a **new notification**, so the sound surely plays (a notification replaced by one with the
+  same tag makes no sound on iOS). The previous one is removed **two seconds after** the new one was sent, so
+  it never disappears before the new one has arrived, and the list stays at one.
+- Only the phone rings, never Alexa or your other devices.
+- **Critical alerts keep working**: when a reminder is a critical alert (the keeps-going stage), its re-triggers
+  are critical alerts too, so they get through the silent switch and Focus. iOS cannot replace or group critical
+  alerts, so those may pile up in the notification list until you answer.
+- The Companion app allows **500 notifications a day per device**. Critical alerts and clear commands do not
+  count; the other re-triggers do. Ringing with ordinary notifications stops at 350 pushes for the day, so the
+  rest keep working, and a Repairs message says so. Critical ringing is never stopped by this.
 
 ## How it escalates
 

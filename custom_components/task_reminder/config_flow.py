@@ -50,7 +50,6 @@ from .const import (
     CONF_RING,
     CONF_RING_MINUTES,
     CONF_RING_SECONDS,
-    CONF_RING_STYLE,
     CONF_SCHEDULE_ENTITY,
     CONF_SINGLE_INSTANCE,
     CONF_SNOOZE_MINUTES,
@@ -74,8 +73,6 @@ from .const import (
     DEFAULT_START_DAYS_BEFORE,
     DEFAULT_TRIGGER_STATE,
     DOMAIN,
-    RING_STYLE_REFRESH,
-    RING_STYLE_REPLACE,
     SOUND_CHOICES,
     SUBENTRY_ROOM,
     SUBENTRY_TYPE,
@@ -137,19 +134,6 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
             vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(5, 120, "s"),
             vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(1, 30, "min"),
-            vol.Optional(CONF_RING_STYLE, default=RING_STYLE_REFRESH): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=[
-                        selector.SelectOptionDict(
-                            value=RING_STYLE_REFRESH, label="Refresh (new notification each time)"
-                        ),
-                        selector.SelectOptionDict(
-                            value=RING_STYLE_REPLACE, label="Replace (same notification, in place)"
-                        ),
-                    ],
-                    mode=selector.SelectSelectorMode.DROPDOWN,
-                )
-            ),
             vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),

@@ -16,8 +16,7 @@
           "notification_sound": "Notification sound (iPhone)",
           "turn_off_players": "Turn these off as a last resort",
           "ring_seconds": "Ring interval (seconds)",
-          "ring_minutes": "Ring for at most (minutes)",
-          "ring_style": "Ring style"
+          "ring_minutes": "Ring for at most (minutes)"
         },
         "data_description": {
           "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
@@ -26,8 +25,7 @@
           "notification_sound": "Pick a sound, or type the exact file name of one you imported in the Companion app (with extension). iOS system sounds (.caf) must first be imported once: in the app, Settings, Companion App, Notifications, Sounds, System tab, Import system sounds, then restart the phone. Empty uses the default sound. Critical alerts use it too.",
           "turn_off_players": "Typically your TV. When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if still on. Never while silencing is active.",
           "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
-          "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again.",
-          "ring_style": "Refresh sends a new notification each time and removes the previous one, so the sound surely plays. Replace overwrites the same notification in place, which only works if iOS plays the sound for a replacement; try it with the Test reminder button."
+          "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again."
         }
       }
     },
@@ -51,8 +49,7 @@
           "notification_sound": "Notification sound (iPhone)",
           "turn_off_players": "Turn these off as a last resort",
           "ring_seconds": "Ring interval (seconds)",
-          "ring_minutes": "Ring for at most (minutes)",
-          "ring_style": "Ring style"
+          "ring_minutes": "Ring for at most (minutes)"
         }
       }
     }
@@ -113,7 +110,7 @@
             "done_tag": "A scan always completes the task, even before it is due.",
             "good_moment_entities": "Binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them turning on brings the next reminder forward.",
             "sound": "Overrides the sound set in the integration settings, for example a different one for the washer. Same choices; system sounds need the one-time import in the Companion app.",
-            "ring": "Keeps triggering the sound on the phone until you snooze, complete or dismiss it, like an alarm. Critical alerts are not used for tasks that ring (iOS cannot replace them, so the list would fill up).",
+            "ring": "Keeps triggering the sound on the phone until you snooze, complete or dismiss it, like an alarm. Each trigger is a new notification and the previous one is removed two seconds later. When the reminder is a critical alert (the keeps-going stage), the triggers are critical alerts too, and those may pile up in the notification list.",
             "ring_seconds": "Empty uses the interval from the integration settings. Set it to about the length of this task's sound."
           }
         },

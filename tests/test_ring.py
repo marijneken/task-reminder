@@ -39,7 +39,7 @@ def on_screen(notify):
     return shown
 
 
-async def test_refresh_style_rings_with_new_notifications_and_a_list_of_one(
+async def test_ringing_sends_a_new_notification_each_time_and_clears_the_old_one_after_a_moment(
     hass, freezer, notify, make_entry
 ):
     await make_entry(alarm())
@@ -47,26 +47,66 @@ async def test_refresh_style_rings_with_new_notifications_and_a_list_of_one(
     assert len(reminders(notify)) == 1
 
     for expected in (2, 3, 4):
-        await advance(hass, freezer, seconds=12)
+        # Quiet until 2 s before the next re-trigger (each loop ends 2 s after the previous one).
+        await advance(hass, freezer, seconds=10 if expected == 2 else 8)
+        assert len(reminders(notify)) == expected - 1
+        await advance(hass, freezer, seconds=2)  # the new notification arrives, 12 s after the last
         assert len(reminders(notify)) == expected
-        assert len(on_screen(notify)) == 1  # the list never grows
+        assert len(on_screen(notify)) == 2  # the old one is still there: never gone before the new
+        await advance(hass, freezer, seconds=1)
+        assert len(on_screen(notify)) == 2  # still there one second later
+        await advance(hass, freezer, seconds=1)
+        assert len(on_screen(notify)) == 1  # two seconds after the new one: back to a list of one
     tags = [c.data["data"]["tag"] for c in reminders(notify)]
     assert len(set(tags)) == 4  # a fresh notification each time, so the sound surely plays
-    assert all(
-        c.data["message"] == "alarm is due" or "Alarm" in c.data["message"]
-        for c in reminders(notify)
-    )
     assert len({c.data["message"] for c in reminders(notify)}) == 1  # same text every time
 
 
-async def test_replace_style_reuses_the_same_notification(hass, freezer, notify, make_entry):
-    await make_entry(alarm(), ring_style="replace")
+async def test_the_new_notification_is_always_sent_before_the_old_one_is_cleared(
+    hass, freezer, notify, make_entry
+):
+    await make_entry(alarm())
     await _start(hass)
-    for _ in range(3):
+    for _ in range(6):
         await advance(hass, freezer, seconds=12)
-    tags = {c.data["data"]["tag"] for c in reminders(notify)}
-    assert len(reminders(notify)) == 4 and len(tags) == 1
-    assert clears(notify) == []  # nothing to clear: iOS replaces it in place
+        await advance(hass, freezer, seconds=2)
+    calls = notify["phone"]
+    sent_at = {
+        c.data["data"]["tag"]: i
+        for i, c in enumerate(calls)
+        if c.data["message"] != "clear_notification"
+    }
+    cleared = 0
+    for i, c in enumerate(calls):
+        if c.data["message"] == "clear_notification" and c.data["data"]["tag"] in sent_at:
+            cleared += 1
+            old = c.data["data"]["tag"]
+            newer = [t for t, j in sent_at.items() if sent_at[old] < j < i]
+            assert newer, f"{old} was cleared before a newer notification was sent"
+    assert cleared >= 5
+
+
+async def test_finishing_inside_the_two_second_window_leaves_nothing_behind(
+    hass, freezer, notify, make_entry
+):
+    await make_entry(alarm())
+    await _start(hass)
+    await advance(hass, freezer, seconds=12)
+    assert len(on_screen(notify)) == 2  # old and new, the old one waiting to be cleared
+    await hass.services.async_call(DOMAIN, "done", {"type": "alarm"}, blocking=True)
+    assert on_screen(notify) == []
+    await advance(hass, freezer, seconds=5)  # the delayed clear must not break anything
+    assert on_screen(notify) == []
+
+
+async def test_a_clear_still_waiting_is_done_after_a_restart(hass, freezer, notify, make_entry):
+    entry = await make_entry(alarm())
+    await _start(hass)
+    await advance(hass, freezer, seconds=12)
+    assert len(on_screen(notify)) == 2
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(on_screen(notify)) == 1  # the leftover was cleared when the integration started
 
 
 async def test_only_the_phone_rings(hass, freezer, notify, make_entry):
@@ -123,15 +163,48 @@ async def test_ringing_stops_after_the_window_until_the_next_reminder(
     assert len(reminders(notify)) == 17
 
 
-async def test_critical_alerts_are_not_used_while_ringing(hass, freezer, notify, make_entry):
-    await make_entry(alarm(snooze_minutes="1"))  # keeps-going (critical) after one reminder
+def is_critical(call):
+    sound = call.data["data"].get("push", {}).get("sound")
+    return isinstance(sound, dict) and sound.get("critical") == 1
+
+
+async def test_critical_alerts_keep_ringing_as_critical_alerts(hass, freezer, notify, make_entry):
+    await make_entry(alarm(snooze_minutes="1"))  # keeps going (critical) after one reminder
     await _start(hass)
-    for _ in range(40):
-        await advance(hass, freezer, seconds=15)
-    pushes = [c.data["data"].get("push", {}) for c in reminders(notify)]
-    assert pushes and not any(
-        isinstance(p.get("sound"), dict) and p["sound"].get("critical") for p in pushes
+    await advance(hass, freezer, minutes=5)  # the second reminder is the first critical one
+    await advance(hass, freezer, seconds=12)
+    criticals = [c for c in reminders(notify) if is_critical(c)]
+    assert len(criticals) >= 2  # the reminder itself and its re-trigger
+    assert not is_critical(reminders(notify)[0])  # the first one was an ordinary reminder
+
+
+async def test_critical_ringing_ignores_the_daily_push_budget(hass, freezer, notify, make_entry):
+    entry = await make_entry(alarm(snooze_minutes="1"))
+    await _start(hass)
+    await advance(hass, freezer, minutes=5)  # now in the critical stage
+    today = dt_util.utcnow().date().isoformat()
+    entry.runtime_data.pushes = {"day": today, "n": 500}  # the limit is used up
+    before = len([c for c in reminders(notify) if is_critical(c)])
+    await advance(hass, freezer, seconds=12)
+    assert len([c for c in reminders(notify) if is_critical(c)]) == before + 1
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "ring_budget") is None
+    assert entry.runtime_data.pushes_today() == 500  # critical alerts do not count
+
+
+async def test_no_critical_mode_still_downgrades_ringing(hass, freezer, notify, make_entry):
+    from datetime import UTC, datetime
+
+    await make_entry(alarm(snooze_minutes="1"))
+    await hass.services.async_call(
+        DOMAIN,
+        "silence",
+        {"mode": "no_critical", "until": datetime(2026, 10, 9, 20, 0, tzinfo=UTC)},
+        blocking=True,
     )
+    await _start(hass)
+    await advance(hass, freezer, minutes=5)
+    await advance(hass, freezer, seconds=12)
+    assert not any(is_critical(c) for c in reminders(notify))
 
 
 async def test_the_regular_reminder_replaces_a_leftover_ring_notification(
@@ -141,6 +214,7 @@ async def test_the_regular_reminder_replaces_a_leftover_ring_notification(
     await _start(hass)
     for _ in range(25):  # past the ring window and up to the regular reminder at 5:00
         await advance(hass, freezer, seconds=12)
+    await advance(hass, freezer, seconds=2)  # the old ring notification is removed a moment later
     assert len(on_screen(notify)) == 1
 
 
