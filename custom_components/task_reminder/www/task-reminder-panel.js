@@ -67,9 +67,8 @@ const makeFormatters = (hass) => {
     const p = Object.fromEntries(keyOf.formatToParts(d).map((x) => [x.type, x.value]));
     return `${p.year}-${p.month}-${p.day}`;
   };
-  let words;
-  try { words = new Intl.RelativeTimeFormat(lang, { numeric: "auto" }); } catch (e) { words = null; }
-  const word = (n) => (words ? words.format(n, "day") : n === 0 ? "today" : "tomorrow");
+  // The panel's own wording is English, so these two words stay English whatever the language.
+  const word = (n) => (n === 0 ? "today" : "tomorrow");
   // "Thu, Oct 15" for MDY, "Thu 15 Oct" for DMY; otherwise whatever the language prefers.
   const dayText = (d) => {
     const p = Object.fromEntries(dayParts.formatToParts(d).map((x) => [x.type, x.value]));
