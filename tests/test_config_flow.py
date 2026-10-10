@@ -14,7 +14,7 @@ from .conftest import advance, type_data
 HUB = {
     "person": "person.marijn",
     "phone_services": ["mobile_app_phone"],
-    "alexa_services": [],
+    "alexa_speakers": [],
     "extra_services": [],
     "quiet_start": "23:00:00",
     "quiet_end": "07:00:00",

@@ -14,7 +14,7 @@ ADHOC_KEY = "ad_hoc"
 # Hub settings (entry data, overridden by entry options)
 CONF_PERSON = "person"
 CONF_PHONE_SERVICES = "phone_services"
-CONF_ALEXA_SERVICES = "alexa_services"
+CONF_ALEXA_SPEAKERS = "alexa_speakers"
 CONF_EXTRA_SERVICES = "extra_services"
 CONF_PAUSE_PLAYERS = "pause_players"
 CONF_TURN_OFF_PLAYERS = "turn_off_players"

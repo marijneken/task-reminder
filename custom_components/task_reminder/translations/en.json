@@ -7,7 +7,7 @@
         "data": {
           "person": "Person",
           "phone_services": "Phone notify services",
-          "alexa_services": "Alexa notify services",
+          "alexa_speakers": "Alexa speakers",
           "extra_services": "Other devices notify services",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
@@ -29,8 +29,8 @@
           "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
           "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again.",
           "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
-          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers whose media player is in that area), which lights flash when a reminder keeps going (the lights of that area), and whether the TV is worth turning off (you are in its area, or it is playing). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces, no lights flash, and any TV that is on is turned off.",
-          "alexa_services": "Alexa Media Player notify services, e.g. alexa_media_echo_office. Put each speaker's media player (media_player.echo_office) in the right area in Home Assistant: that is how the speaker in your area is found."
+          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area), which lights flash when a reminder keeps going (the lights of that area), and whether the TV is worth turning off (you are in its area, or it is playing). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces, no lights flash, and any TV that is on is turned off.",
+          "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters."
         }
       }
     },
@@ -45,7 +45,7 @@
         "data": {
           "person": "Person",
           "phone_services": "Phone notify services",
-          "alexa_services": "Alexa notify services",
+          "alexa_speakers": "Alexa speakers",
           "extra_services": "Other devices notify services",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",

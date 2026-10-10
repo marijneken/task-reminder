@@ -19,7 +19,7 @@ from homeassistant.util import slugify
 
 from .const import (
     ADHOC_KEY,
-    CONF_ALEXA_SERVICES,
+    CONF_ALEXA_SPEAKERS,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
@@ -125,7 +125,11 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 selector.EntitySelectorConfig(domain="person")
             ),
             vol.Optional(CONF_PHONE_SERVICES, default=[]): notify,
-            vol.Optional(CONF_ALEXA_SERVICES, default=[]): notify,
+            vol.Optional(CONF_ALEXA_SPEAKERS, default=[]): selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    domain="media_player", integration="alexa_media", multiple=True
+                )
+            ),
             vol.Optional(CONF_EXTRA_SERVICES, default=[]): notify,
             vol.Optional(CONF_PAUSE_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)

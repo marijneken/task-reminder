@@ -90,7 +90,7 @@ async def test_failing_media_service_does_not_break_the_reminder(hass, freezer, 
 
 async def test_repair_issue_when_no_notify_service(hass, make_entry):
     registry = ir.async_get(hass)
-    entry = await make_entry(phone_services=[], alexa_services=[], extra_services=[])
+    entry = await make_entry(phone_services=[], alexa_speakers=[], extra_services=[])
     assert registry.async_get_issue(DOMAIN, "no_notify_services") is not None
 
     hass.config_entries.async_update_entry(

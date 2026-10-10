@@ -11,7 +11,7 @@ with absolute times, so a restart loses nothing.
 1. HACS → ⋮ → Custom repositories → `https://github.com/marijneken/task-reminder`, type Integration.
 2. Download **Task Reminder**, restart Home Assistant.
 3. Settings → Devices & services → Add integration → Task Reminder. Choose your
-   person entity and the notify services per tier (phone, Alexa, other devices).
+   person entity and the notify services (phone, other devices) and your Alexa speakers.
 4. On the integration page, **Add task type** for each kind of recurring reminder (washer, trash, ...).
 
 Every bump of `version` in `manifest.json` on `main` publishes a release `vX.Y.Z`; HACS
@@ -34,9 +34,10 @@ Assistant **area** you are in (from your own presence system). Only areas are us
 configure. It decides three things:
 
 - **Which Alexa speaks first.** The 2nd reminder is announced only by the speakers in your area, from the 3rd
-  reminder every speaker is used. A speaker's area is the area of its media player in Home Assistant
-  (`notify.alexa_media_echo_office` belongs to `media_player.echo_office`; an entity's own area wins over its
-  device's), so put your Echo media players in the right areas and list their notify services in the settings.
+  reminder every speaker is used. Pick your Echo speakers (their Alexa Media Player `media_player` entities) in
+  the settings and put each one in its area in Home Assistant; that is all, nothing is matched by name. An
+  entity's own area wins over its device's. Announcements go through `notify.alexa_media` with the speakers as
+  targets.
 - **Which lights flash.** In the keeps-going stage, every reminder flashes the lights of your area (a long flash,
   then back to how they were) as one more annoyance. Never while silencing is active, never for the light ladder,
   and not for the repeats of a ringing reminder.

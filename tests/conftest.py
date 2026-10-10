@@ -104,7 +104,7 @@ def notify(hass: HomeAssistant) -> dict[str, list]:
     """Mock the notify services the hub points at."""
     return {
         "phone": async_mock_service(hass, "notify", "mobile_app_phone"),
-        "alexa": async_mock_service(hass, "notify", "alexa_media_echo"),
+        "alexa": async_mock_service(hass, "notify", "alexa_media"),
         "extra": async_mock_service(hass, "notify", "mobile_app_ipad"),
     }
 
@@ -120,7 +120,7 @@ def make_entry(hass: HomeAssistant, notify):
             data={
                 "person": "person.marijn",
                 "phone_services": ["mobile_app_phone"],
-                "alexa_services": ["alexa_media_echo"],
+                "alexa_speakers": ["media_player.echo"],
                 "extra_services": ["mobile_app_ipad"],
                 "quiet_start": "23:00:00",
                 "quiet_end": "07:00:00",

@@ -37,7 +37,7 @@ from .const import (
     ACTION_SNOOZE,
     ATTR_DAYS_UNTIL,
     ATTR_SORT_DATE,
-    CONF_ALEXA_SERVICES,
+    CONF_ALEXA_SPEAKERS,
     CONF_EXTRA_SERVICES,
     CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
@@ -129,7 +129,7 @@ class TaskManager:
         return Notifier(
             self.hass,
             list(s.get(CONF_PHONE_SERVICES, [])),
-            list(s.get(CONF_ALEXA_SERVICES, [])),
+            list(s.get(CONF_ALEXA_SPEAKERS, [])),
             list(s.get(CONF_EXTRA_SERVICES, [])),
             s.get(CONF_TAP_URL),
         )
@@ -181,12 +181,6 @@ class TaskManager:
         entry = ar.async_get(self.hass).async_get_area(area) if area else None
         return entry.name if entry else None
 
-    @staticmethod
-    def _speaker_entity(service: str) -> str:
-        """The media_player behind an Alexa notify service: notify.alexa_media_echo_office
-        belongs to media_player.echo_office (Alexa Media Player's naming)."""
-        return "media_player." + service.removeprefix("alexa_media_")
-
     def _area_of(self, entity_id: str) -> str | None:
         """The area of an entity: its own, else the one of its device."""
         entry = er.async_get(self.hass).async_get(entity_id)
@@ -199,18 +193,14 @@ class TaskManager:
 
     def _alexa_targets(self, plan) -> list[str] | None:
         """The speakers in the area you are in; every speaker (None) once the reminder reaches
-        the wider tier, or when no speaker is known to be in that area. A speaker's area is the
-        area of its media_player in Home Assistant."""
+        the wider tier, or when no speaker is known to be in that area. A speaker is a
+        media_player, and its area is the one it (or its device) has in Home Assistant."""
         if plan.extra:
             return None
         area = self.current_area()
         if area is None:
             return None
-        here = [
-            service
-            for service in self.notifier.alexa
-            if self._area_of(self._speaker_entity(service)) == area
-        ]
+        here = [speaker for speaker in self.notifier.alexa if self._area_of(speaker) == area]
         return here or None
 
     # -- ringing: keep re-triggering the sound until the task is answered ----------

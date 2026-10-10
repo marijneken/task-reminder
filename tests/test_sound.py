@@ -78,7 +78,7 @@ async def test_hub_flow_accepts_a_chosen_and_a_typed_sound(hass):
             {
                 "person": "person.marijn",
                 "phone_services": ["mobile_app_phone"],
-                "alexa_services": [],
+                "alexa_speakers": [],
                 "extra_services": [],
                 "quiet_start": "23:00:00",
                 "quiet_end": "07:00:00",

@@ -21,6 +21,8 @@ from .policy import ChannelPlan
 _LOGGER = logging.getLogger(__name__)
 
 GROUP = "task_reminder"
+# Alexa Media Player's generic notify service; the speakers are its targets (media_player ids).
+ALEXA_SERVICE = "alexa_media"
 
 
 def tag_for(task_id: str) -> str:
@@ -35,7 +37,7 @@ class Notifier:
         self,
         hass: HomeAssistant,
         phone: list[str],
-        alexa: list[str],
+        alexa: list[str],  # media_player entity ids of the Echo speakers
         extra: list[str],
         tap_url: str | None = None,
     ) -> None:
@@ -139,7 +141,13 @@ class Notifier:
             ]
         if plan.alexa:
             targets = self.alexa if alexa_targets is None else alexa_targets
-            calls += [(s, {"message": message, "data": {"type": "announce"}}) for s in targets]
+            if targets:
+                calls.append(
+                    (
+                        ALEXA_SERVICE,
+                        {"message": message, "target": list(targets), "data": {"type": "announce"}},
+                    )
+                )
         return await self._send_all(calls)
 
     async def async_quiet(self, *, task_id: str, message: str) -> int:
