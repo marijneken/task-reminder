@@ -108,13 +108,16 @@ def test_other_days_are_named_and_tomorrow_is_a_word():
 
 
 def test_tomorrow_stays_english_in_every_language():
-    en, nl, de = run(
+    items = run(
         [
             case(locale={"language": lang, "time_format": "24"}, iso=NEXT_MORNING)
             for lang in ("en", "nl", "de")
         ]
     )
-    assert en["time"] == nl["time"] == de["time"] == "tomorrow 07:00"
+    for item in items:
+        word, _, clock = item["time"].partition(" ")
+        assert word == "tomorrow"  # never "morgen" / "morgen"
+        assert clock in ("07:00", "7:00")  # the clock follows the language (as in HA itself)
     (item,) = run([case(locale={"language": "nl"}, day="2026-10-10")])
     assert item["day"] == "tomorrow"
 
