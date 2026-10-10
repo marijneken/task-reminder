@@ -110,7 +110,7 @@
             "done_tag": "A scan always completes the task, even before it is due.",
             "good_moment_entities": "Binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them turning on brings the next reminder forward.",
             "sound": "Overrides the sound set in the integration settings, for example a different one for the washer. Same choices; system sounds need the one-time import in the Companion app.",
-            "ring": "Keeps triggering the sound on the phone until you snooze, complete or dismiss it, like an alarm. Each trigger is a new notification and the previous one is removed two seconds later. When the reminder is a critical alert (the keeps-going stage), the triggers are critical alerts too, and those may pile up in the notification list.",
+            "ring": "Keeps triggering the sound on the phone until you snooze, complete or dismiss it, like an alarm. Each trigger is a new notification and the previous one is removed right after it. When the reminder is a critical alert (the keeps-going stage), the triggers are critical alerts too, and those may pile up in the notification list.",
             "ring_seconds": "Empty uses the interval from the integration settings. Set it to about the length of this task's sound."
           }
         },

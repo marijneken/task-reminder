@@ -39,7 +39,7 @@ def on_screen(notify):
     return shown
 
 
-async def test_ringing_sends_a_new_notification_each_time_and_clears_the_old_one_after_a_moment(
+async def test_ringing_sends_a_new_notification_each_time_and_the_list_stays_at_one(
     hass, freezer, notify, make_entry
 ):
     await make_entry(alarm())
@@ -47,16 +47,11 @@ async def test_ringing_sends_a_new_notification_each_time_and_clears_the_old_one
     assert len(reminders(notify)) == 1
 
     for expected in (2, 3, 4):
-        # Quiet until 2 s before the next re-trigger (each loop ends 2 s after the previous one).
-        await advance(hass, freezer, seconds=10 if expected == 2 else 8)
-        assert len(reminders(notify)) == expected - 1
-        await advance(hass, freezer, seconds=2)  # the new notification arrives, 12 s after the last
+        await advance(hass, freezer, seconds=11)
+        assert len(reminders(notify)) == expected - 1  # quiet between re-triggers
+        await advance(hass, freezer, seconds=1)  # 12 s: the next one
         assert len(reminders(notify)) == expected
-        assert len(on_screen(notify)) == 2  # the old one is still there: never gone before the new
-        await advance(hass, freezer, seconds=1)
-        assert len(on_screen(notify)) == 2  # still there one second later
-        await advance(hass, freezer, seconds=1)
-        assert len(on_screen(notify)) == 1  # two seconds after the new one: back to a list of one
+        assert len(on_screen(notify)) == 1  # the old one is removed right after the new one
     tags = [c.data["data"]["tag"] for c in reminders(notify)]
     assert len(set(tags)) == 4  # a fresh notification each time, so the sound surely plays
     assert len({c.data["message"] for c in reminders(notify)}) == 1  # same text every time
@@ -69,7 +64,6 @@ async def test_the_new_notification_is_always_sent_before_the_old_one_is_cleared
     await _start(hass)
     for _ in range(6):
         await advance(hass, freezer, seconds=12)
-        await advance(hass, freezer, seconds=2)
     calls = notify["phone"]
     sent_at = {
         c.data["data"]["tag"]: i
@@ -84,29 +78,6 @@ async def test_the_new_notification_is_always_sent_before_the_old_one_is_cleared
             newer = [t for t, j in sent_at.items() if sent_at[old] < j < i]
             assert newer, f"{old} was cleared before a newer notification was sent"
     assert cleared >= 5
-
-
-async def test_finishing_inside_the_two_second_window_leaves_nothing_behind(
-    hass, freezer, notify, make_entry
-):
-    await make_entry(alarm())
-    await _start(hass)
-    await advance(hass, freezer, seconds=12)
-    assert len(on_screen(notify)) == 2  # old and new, the old one waiting to be cleared
-    await hass.services.async_call(DOMAIN, "done", {"type": "alarm"}, blocking=True)
-    assert on_screen(notify) == []
-    await advance(hass, freezer, seconds=5)  # the delayed clear must not break anything
-    assert on_screen(notify) == []
-
-
-async def test_a_clear_still_waiting_is_done_after_a_restart(hass, freezer, notify, make_entry):
-    entry = await make_entry(alarm())
-    await _start(hass)
-    await advance(hass, freezer, seconds=12)
-    assert len(on_screen(notify)) == 2
-    await hass.config_entries.async_reload(entry.entry_id)
-    await hass.async_block_till_done()
-    assert len(on_screen(notify)) == 1  # the leftover was cleared when the integration started
 
 
 async def test_only_the_phone_rings(hass, freezer, notify, make_entry):
@@ -214,7 +185,6 @@ async def test_the_regular_reminder_replaces_a_leftover_ring_notification(
     await _start(hass)
     for _ in range(25):  # past the ring window and up to the regular reminder at 5:00
         await advance(hass, freezer, seconds=12)
-    await advance(hass, freezer, seconds=2)  # the old ring notification is removed a moment later
     assert len(on_screen(notify)) == 1
 
 

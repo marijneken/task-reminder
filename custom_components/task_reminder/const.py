@@ -136,9 +136,6 @@ HISTORY_LIMIT = 10
 DEFAULT_RING_SECONDS = 12  # about the length of the sound
 MIN_RING_SECONDS = 5
 DEFAULT_RING_MINUTES = 3
-# A re-triggered notification is a new one; the previous one is removed this many seconds later,
-# so it never disappears before the new one has arrived (a push takes a moment to get there).
-RING_CLEAR_DELAY = 2.0
 # The Companion app allows 500 pushes a day per device (critical alerts and commands such as
 # clear_notification do not count). Ringing stops here so other notifications keep working.
 PUSH_DAILY_BUDGET = 350

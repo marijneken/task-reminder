@@ -64,8 +64,8 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
   most 30 seconds of a custom sound.
 - A reminder rings for at most **ring for** minutes (default 3); the next regular reminder rings again.
 - Each re-trigger is a **new notification**, so the sound surely plays (a notification replaced by one with the
-  same tag makes no sound on iOS). The previous one is removed **two seconds after** the new one was sent, so
-  it never disappears before the new one has arrived, and the list stays at one.
+  same tag makes no sound on iOS). The new one is sent first and the previous one is removed right after, so
+  the list stays at one. (The old notification can disappear briefly before the new one has arrived on the phone.)
 - Only the phone rings, never Alexa or your other devices.
 - **Critical alerts keep working**: when a reminder is a critical alert (the keeps-going stage), its re-triggers
   are critical alerts too, so they get through the silent switch and Focus. iOS cannot replace or group critical

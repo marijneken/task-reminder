@@ -21,7 +21,6 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
-    async_call_later,
     async_track_point_in_utc_time,
     async_track_state_change_event,
 )
@@ -63,7 +62,6 @@ from .const import (
     HOLD_SILENT,
     MIN_RING_SECONDS,
     PUSH_DAILY_BUDGET,
-    RING_CLEAR_DELAY,
     ROOM_RECENT,
     SIGNAL_UPDATE,
     SILENCE_NO_CRITICAL,
@@ -108,7 +106,6 @@ class TaskManager:
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._lock = asyncio.Lock()
         self._unsub_timer: CALLBACK_TYPE | None = None
-        self._clear_timers: set[CALLBACK_TYPE] = set()
         self._unsubs: list[CALLBACK_TYPE] = []
         self._started = False
         self.rooms: dict[str, Room] = {}
@@ -229,38 +226,11 @@ class TaskManager:
         return timedelta(minutes=max(1, int(minutes)))
 
     async def _clear_notifications(self, task: Task) -> None:
-        """Remove everything this task has on the phones: its tag, the latest ring tag and any
-        older one still waiting to be cleared."""
-        tags = [tag_for(task.id), *task.ring_stale]
+        """Remove everything this task has on the phones (its tag and the latest ring tag)."""
+        tags = [tag_for(task.id)]
         if task.ring_tag:
             tags.append(task.ring_tag)
-        task.ring_stale = []
         await self.notifier.async_clear_tags(tags)
-
-    def _clear_later(self, task: Task, tags: list[str | None]) -> None:
-        """Remove old notifications a moment after the new one was sent, not before it has
-        arrived. The tags are kept on the task until then, so nothing is left behind."""
-        wanted = [t for t in tags if t]
-        if not wanted:
-            return
-        task.ring_stale.extend(wanted)
-        task_id = task.id
-
-        async def _run(_now: datetime) -> None:
-            self._clear_timers.discard(cancel)
-            await self._async_clear_stale(task_id)
-
-        cancel = async_call_later(self.hass, RING_CLEAR_DELAY, _run)
-        self._clear_timers.add(cancel)
-
-    async def _async_clear_stale(self, task_id: str) -> None:
-        async with self._lock:
-            task = self.tasks.get(task_id)
-            if task is None or not task.ring_stale:
-                return
-            tags, task.ring_stale = list(task.ring_stale), []
-        await self.notifier.async_clear_tags(tags)
-        await self._async_save()
 
     def _stop_ringing(self, task: Task) -> None:
         task.ring_at = None
@@ -268,7 +238,7 @@ class TaskManager:
 
     async def _ring(self, task: Task, now: datetime) -> None:
         """Re-send the last reminder to the phone so its sound plays again, as a new
-        notification; the previous one is removed a moment later."""
+        notification; the previous one is removed right after."""
         task_type = self._type_of(task)
         if task_type is None or task.status is not TaskStatus.NOTIFYING:
             self._stop_ringing(task)
@@ -311,7 +281,8 @@ class TaskManager:
             tag=tag,
         )
         if delivered:
-            self._clear_later(task, [task.ring_tag or tag_for(task.id)])
+            # The new one has been sent; now take the previous one away so the list stays at one.
+            await self.notifier.async_clear_tags([task.ring_tag or tag_for(task.id)])
             task.ring_tag = tag
         nxt = now + self._ring_interval(task_type)
         task.ring_at = nxt if nxt < task.ring_until else None
@@ -350,8 +321,6 @@ class TaskManager:
         """Run once Home Assistant has started: anything that became due while
         it was down fires now, when the notify services exist."""
         self._started = True
-        for task_id in [t.id for t in self.tasks.values() if t.ring_stale]:
-            await self._async_clear_stale(task_id)
         for task_type in self.types.values():
             if task_type.schedule_entity:
                 await self._async_schedule_check(task_type)
@@ -365,9 +334,6 @@ class TaskManager:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
-        for cancel in self._clear_timers:
-            cancel()  # leftovers are cleared on the next start (they are saved with the task)
-        self._clear_timers.clear()
 
     def _subscribe(self) -> None:
         by_entity: dict[str, list[tuple[str, TaskType, str]]] = {}
@@ -616,7 +582,7 @@ class TaskManager:
             if task.level > len(snoozes):  # the 2nd reminder of the keeps-going stage
                 await self._turn_off_players(task)
         if task.ring_tag:  # a re-triggered notification is still up: the regular one replaces it
-            self._clear_later(task, [task.ring_tag])
+            await self.notifier.async_clear_tags([task.ring_tag])
             task.ring_tag = None
         task.held_reason = None
         task.status = TaskStatus.NOTIFYING
