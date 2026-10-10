@@ -18,6 +18,9 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
@@ -36,7 +39,6 @@ from .const import (
     ATTR_SORT_DATE,
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
-    CONF_FLASH_LIGHTS,
     CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
@@ -46,6 +48,7 @@ from .const import (
     CONF_RING_MINUTES,
     CONF_RING_SECONDS,
     CONF_RING_SWAP_SECONDS,
+    CONF_ROOM_PROVIDER,
     CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
     DEFAULT_QUIET_END,
@@ -65,18 +68,16 @@ from .const import (
     HOLD_SILENT,
     MIN_RING_SECONDS,
     PUSH_DAILY_BUDGET,
-    ROOM_RECENT,
     SIGNAL_UPDATE,
     SILENCE_NO_CRITICAL,
     SILENCE_OFF,
     SILENCE_SILENT,
     STORAGE_KEY,
     STORAGE_VERSION,
-    SUBENTRY_ROOM,
     SUBENTRY_TYPE,
     SUMMARY_GRACE,
 )
-from .models import ADHOC_TYPE, Room, Silence, Task, TaskStatus, TaskType
+from .models import ADHOC_TYPE, Silence, Task, TaskStatus, TaskType
 from .notifier import Notifier, tag_for
 from .policy import (
     ChannelPlan,
@@ -112,8 +113,6 @@ class TaskManager:
         self._unsub_timer: CALLBACK_TYPE | None = None
         self._unsubs: list[CALLBACK_TYPE] = []
         self._started = False
-        self.rooms: dict[str, Room] = {}
-        self._room_seen: dict[str, datetime] = {}  # room key -> last time presence was seen
         self._reload_types()
         self.notifier = self._build_notifier()
         self.notifier.on_push = self._note_push
@@ -130,31 +129,15 @@ class TaskManager:
         return Notifier(
             self.hass,
             list(s.get(CONF_PHONE_SERVICES, [])),
-            list(
-                dict.fromkeys(
-                    [
-                        *s.get(CONF_ALEXA_SERVICES, []),
-                        *(r.alexa_service for r in self.rooms.values() if r.alexa_service),
-                    ]
-                )
-            ),
+            list(s.get(CONF_ALEXA_SERVICES, [])),
             list(s.get(CONF_EXTRA_SERVICES, [])),
             s.get(CONF_TAP_URL),
         )
 
     def _reload_types(self) -> None:
         self.types = {ADHOC_TYPE.key: ADHOC_TYPE}
-        self.rooms = {}
         for subentry in self.entry.subentries.values():
-            if subentry.subentry_type == SUBENTRY_ROOM:
-                try:
-                    room = Room.from_data(dict(subentry.data))
-                except (KeyError, ValueError):
-                    _LOGGER.warning("Ignoring invalid room %s", subentry.title)
-                    continue
-                self.rooms[room.key] = room
-                continue
-            if subentry.subentry_type != SUBENTRY_TYPE:
+            if subentry.subentry_type != SUBENTRY_TYPE:  # e.g. leftovers of the old "rooms"
                 continue
             try:
                 task_type = TaskType.from_subentry(subentry)
@@ -177,32 +160,58 @@ class TaskManager:
             task_type = replace(task_type, **overrides)
         return task_type
 
-    def current_room(self) -> Room | None:
-        """Where you are: a room that shows presence now (the one seen most recently
-        if several), else the room with presence in the last few minutes, else unknown.
-        Never a guess beyond that: unknown means "announce everywhere"."""
-        now = dt_util.utcnow()
-        showing = [
-            r
-            for r in self.rooms.values()
-            if any((s := self.hass.states.get(e)) and s.state == "on" for e in r.presence_entities)
-        ]
-        if showing:
-            return max(showing, key=lambda r: self._room_seen.get(r.key, now))
-        recent = [
-            (seen, r)
-            for r in self.rooms.values()
-            if (seen := self._room_seen.get(r.key)) and now - seen <= ROOM_RECENT
-        ]
-        return max(recent, key=lambda p: p[0])[1] if recent else None
+    # -- where you are ----------------------------------------------------------------
+    # The "room presence provider" is an entity whose state is the id of the Home Assistant
+    # area you are in. It is the only source: when it is not set, cannot answer (unknown,
+    # unavailable) or names no area we know (none, away, ...), your place is unknown, and
+    # unknown means: announce on every speaker, flash no lights, and any TV that is on is a
+    # candidate. Never a guess.
+
+    def current_area(self) -> str | None:
+        """The id of the area you are in, or None when unknown."""
+        entity = self.settings.get(CONF_ROOM_PROVIDER)
+        state = self.hass.states.get(entity) if entity else None
+        if state is None or not (value := state.state.strip()):
+            return None
+        return value if ar.async_get(self.hass).async_get_area(value) else None
+
+    def current_place(self) -> str | None:
+        """The name of the area you are in, for display."""
+        area = self.current_area()
+        entry = ar.async_get(self.hass).async_get_area(area) if area else None
+        return entry.name if entry else None
+
+    @staticmethod
+    def _speaker_entity(service: str) -> str:
+        """The media_player behind an Alexa notify service: notify.alexa_media_echo_office
+        belongs to media_player.echo_office (Alexa Media Player's naming)."""
+        return "media_player." + service.removeprefix("alexa_media_")
+
+    def _area_of(self, entity_id: str) -> str | None:
+        """The area of an entity: its own, else the one of its device."""
+        entry = er.async_get(self.hass).async_get(entity_id)
+        if entry is None:
+            return None
+        if entry.area_id:
+            return entry.area_id
+        device = dr.async_get(self.hass).async_get(entry.device_id) if entry.device_id else None
+        return device.area_id if device else None
 
     def _alexa_targets(self, plan) -> list[str] | None:
-        """The speaker in the room you are in; every speaker (None) once the reminder
-        reaches the wider tier, or when the room or its speaker is unknown."""
+        """The speakers in the area you are in; every speaker (None) once the reminder reaches
+        the wider tier, or when no speaker is known to be in that area. A speaker's area is the
+        area of its media_player in Home Assistant."""
         if plan.extra:
             return None
-        room = self.current_room()
-        return [room.alexa_service] if room and room.alexa_service else None
+        area = self.current_area()
+        if area is None:
+            return None
+        here = [
+            service
+            for service in self.notifier.alexa
+            if self._area_of(self._speaker_entity(service)) == area
+        ]
+        return here or None
 
     # -- ringing: keep re-triggering the sound until the task is answered ----------
 
@@ -403,29 +412,15 @@ class TaskManager:
                 )
             )
 
-        presence: dict[str, list[str]] = {}
-        for room in self.rooms.values():
-            for entity in room.presence_entities:
-                presence.setdefault(entity, []).append(room.key)
-        if presence:
-            now = dt_util.utcnow()
-            for entity, room_keys in presence.items():
-                state = self.hass.states.get(entity)
-                if state is not None and state.state == "on":
-                    for key in room_keys:
-                        self._room_seen[key] = now
+        provider = self.settings.get(CONF_ROOM_PROVIDER)
+        if provider:
 
             @callback
-            def _presence_changed(event: Event[EventStateChangedData]) -> None:
-                new = event.data["new_state"]
-                if new is None or new.state not in ("on", "off"):
-                    return
-                # Seen "on" now, or just stopped (off): both are the last time you were there.
-                for key in presence.get(event.data["entity_id"], []):
-                    self._room_seen[key] = dt_util.utcnow()
+            def _provider_changed(event: Event[EventStateChangedData]) -> None:
+                async_dispatcher_send(self.hass, SIGNAL_UPDATE)  # the panel shows where you are
 
             self._unsubs.append(
-                async_track_state_change_event(self.hass, list(presence), _presence_changed)
+                async_track_state_change_event(self.hass, [provider], _provider_changed)
             )
 
         person = self.settings.get(CONF_PERSON)
@@ -718,33 +713,41 @@ class TaskManager:
         if players:
             await self._media_call("media_pause", players)
 
+    def _watching(self, player: str) -> bool:
+        """Is a TV worth turning off? When we know where you are: if you are in the TV's area,
+        or it is playing (a playing TV is a good sign you are watching, wherever you are).
+        When we do not know where you are: any TV that is on."""
+        state = self.hass.states.get(player)
+        if state is None or state.state in ("off", "unavailable", "unknown"):
+            return False
+        area = self.current_area()
+        if area is None:
+            return True
+        return state.state == "playing" or self._area_of(player) == area
+
     async def _turn_off_players(self, task: Task) -> None:
         """Last step of the ladder: turn the chosen TVs off. Once per task, never while
-        silencing is on (cinema, teaching), and only what is on right now."""
+        silencing is on (cinema, teaching), and only the ones you are watching."""
         if "turned_off" in task.extra or self.silence.mode != SILENCE_OFF:
             return
-        players = [
-            p
-            for p in self.settings.get(CONF_TURN_OFF_PLAYERS, [])
-            if (state := self.hass.states.get(p))
-            and state.state not in ("off", "unavailable", "unknown")
-        ]
+        players = [p for p in self.settings.get(CONF_TURN_OFF_PLAYERS, []) if self._watching(p)]
         task.extra["turned_off"] = players
         if players:
             await self._media_call("turn_off", players)
 
     async def _flash_lights(self) -> None:
-        """An annoyance of the keeps-going stage: flash the chosen lights with every reminder
-        (long flash, the light returns to how it was). Never while silencing is active."""
-        lights = self.settings.get(CONF_FLASH_LIGHTS) or []
-        if not lights or self.silence.mode != SILENCE_OFF:
+        """An annoyance of the keeps-going stage: flash the lights of the area you are in (long
+        flash; they return to how they were). Needs to know where you are; never while
+        silencing is active."""
+        area = self.current_area()
+        if area is None or self.silence.mode != SILENCE_OFF:
             return
         try:
             await self.hass.services.async_call(
-                "light", "turn_on", {"entity_id": lights, "flash": "long"}, blocking=True
+                "light", "turn_on", {"flash": "long"}, target={"area_id": area}, blocking=True
             )
         except Exception:
-            _LOGGER.warning("Could not flash %s", lights, exc_info=True)
+            _LOGGER.warning("Could not flash the lights in %s", area, exc_info=True)
 
     async def _resume_media(self, task: Task) -> None:
         """Resume the players this task paused, unless someone else already did."""

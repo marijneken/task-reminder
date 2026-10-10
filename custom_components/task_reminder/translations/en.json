@@ -18,7 +18,7 @@
           "ring_seconds": "Ring interval (seconds)",
           "ring_minutes": "Ring for at most (minutes)",
           "ring_swap_seconds": "Extra time per repeat (seconds)",
-          "flash_lights": "Flash these lights when it keeps going"
+          "room_provider": "Room presence provider"
         },
         "data_description": {
           "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
@@ -29,7 +29,8 @@
           "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
           "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again.",
           "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
-          "flash_lights": "Lights that flash (a long flash, then back to how they were) with every reminder of the keeps-going stage, as a last annoyance. Never while silencing is active."
+          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers whose media player is in that area), which lights flash when a reminder keeps going (the lights of that area), and whether the TV is worth turning off (you are in its area, or it is playing). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces, no lights flash, and any TV that is on is turned off.",
+          "alexa_services": "Alexa Media Player notify services, e.g. alexa_media_echo_office. Put each speaker's media player (media_player.echo_office) in the right area in Home Assistant: that is how the speaker in your area is found."
         }
       }
     },
@@ -55,7 +56,7 @@
           "ring_seconds": "Ring interval (seconds)",
           "ring_minutes": "Ring for at most (minutes)",
           "ring_swap_seconds": "Extra time per repeat (seconds)",
-          "flash_lights": "Flash these lights when it keeps going"
+          "room_provider": "Room presence provider"
         }
       }
     }
@@ -164,43 +165,6 @@
       },
       "abort": {
         "reconfigure_successful": "Task type updated."
-      }
-    },
-    "room": {
-      "initiate_flow": {
-        "user": "Add room",
-        "reconfigure": "Edit room"
-      },
-      "entry_type": "Room",
-      "step": {
-        "user": {
-          "title": "Room",
-          "description": "Reminders are announced by the Alexa in the room you are in (the room that shows presence now, or showed it in the last 10 minutes). From the third reminder every speaker is used, and when no room is known too.",
-          "data": {
-            "name": "Name",
-            "presence_entities": "Presence sensors",
-            "alexa_service": "Alexa notify service"
-          },
-          "data_description": {
-            "presence_entities": "Motion or presence binary sensors in this room.",
-            "alexa_service": "E.g. alexa_media_echo_living_room. Leave empty if the room has no speaker."
-          }
-        },
-        "reconfigure": {
-          "title": "Room",
-          "data": {
-            "name": "Name",
-            "presence_entities": "Presence sensors",
-            "alexa_service": "Alexa notify service"
-          }
-        }
-      },
-      "error": {
-        "invalid_name": "Give the room a name.",
-        "already_exists": "A room with this name already exists."
-      },
-      "abort": {
-        "reconfigure_successful": "Room updated."
       }
     }
   },

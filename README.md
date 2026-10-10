@@ -27,14 +27,24 @@ On iOS the buttons appear when you long-press or pull down the notification; the
 The icon is always the Home Assistant app icon on iOS. Tapping opens Home Assistant at the page you set in the
 integration settings (`/lovelace/...`), or its default page when empty.
 
-## Rooms and Alexa
+## Where you are: the room presence provider
 
-Add **rooms** on the integration page (**Add room**): a name, the presence or motion sensors in it, and the
-Alexa notify service of the speaker there. The 2nd reminder is announced only by the speaker in the room you
-are in: the room that shows presence now (or, if several, the one seen most recently), else the room that
-showed presence in the last 10 minutes. From the 3rd reminder every speaker is used, and when no room is known
-(or the room has no speaker) all speakers are used, as before. Room speakers do not need to be listed in the
-integration settings too. The Tasks panel shows the current room in its header.
+Choose a **Room presence provider** in the integration settings: an entity whose state is the id of the Home
+Assistant **area** you are in (from your own presence system). Only areas are used; there is nothing else to
+configure. It decides three things:
+
+- **Which Alexa speaks first.** The 2nd reminder is announced only by the speakers in your area, from the 3rd
+  reminder every speaker is used. A speaker's area is the area of its media player in Home Assistant
+  (`notify.alexa_media_echo_office` belongs to `media_player.echo_office`; an entity's own area wins over its
+  device's), so put your Echo media players in the right areas and list their notify services in the settings.
+- **Which lights flash.** In the keeps-going stage, every reminder flashes the lights of your area (a long flash,
+  then back to how they were) as one more annoyance. Never while silencing is active, never for the light ladder,
+  and not for the repeats of a ringing reminder.
+- **Whether a TV is worth turning off** (see below): when you are in its area, or when it is playing.
+
+When the provider is not set, unknown or unavailable, or names no area (`none`, `away`, an area that does not
+exist), your place is **unknown**: every speaker announces, no lights flash, and any TV that is on is a candidate.
+The Tasks panel shows the area you are in, in its header.
 
 ## Notification sound (iPhone)
 
@@ -91,11 +101,12 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
 
 Choose media players in the integration settings to have whatever is playing on them paused when a
 reminder reaches the other devices (the 3rd notification); it resumes when the task ends (done, dismissed or
-expired), unless you already resumed it yourself. You can also choose **lights to flash**: with every reminder of the keeps-going stage they flash (a long flash,
-then back to how they were) as one more annoyance. Never while silencing is active and never for the light ladder.
+expired), unless you already resumed it yourself. 
 
 As a last resort you can choose media players (your TV) to **turn off**: once the snoozes are used up and the
-second keeps-going reminder is sent, those that are still on are turned off, once per task. Never while silencing
+second keeps-going reminder is sent, the ones you are watching are turned off, once per task: a TV in the area you
+are in (even paused), or a TV that is playing wherever you are. A TV that is on in an area you are not in and not
+playing is left alone. If your place is unknown, any TV that is on is turned off. Never while silencing
 is active, never for the light ladder, and they are not turned back on afterwards. Dismissable tasks with a fill flag that is off use a lighter
 ladder (phone and Alexa only) and never pause media. If no notify service is configured, a Repairs warning says so.
 

@@ -175,3 +175,24 @@ async def test_finished_event(hass, make_entry):
     await hass.services.async_call(DOMAIN, "done", {"type": "washer"}, blocking=True)
     await hass.async_block_till_done()
     assert events[0].data["outcome"] == "done"
+
+
+async def test_removing_the_integration_forgets_its_tasks(hass, make_entry, hass_storage):
+    entry = await make_entry(type_data("washer"))
+    await _start(hass, "washer")
+    assert hass_storage["task_reminder"]["data"]["tasks"]
+
+    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert "task_reminder" not in hass_storage  # nothing left behind
+
+    entry = await make_entry(type_data("washer"))
+    assert entry.runtime_data.tasks == {}  # adding it again starts clean
+
+
+async def test_a_reload_keeps_the_tasks(hass, make_entry):
+    entry = await make_entry(type_data("washer"))
+    await _start(hass, "washer")
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(entry.runtime_data.tasks) == 1  # only removal forgets

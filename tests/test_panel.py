@@ -57,18 +57,21 @@ async def test_snapshot_marks_ringing_tasks(hass, hass_ws_client, make_entry):
     assert {t["type"]: t["ringing"] for t in update["tasks"]}["alarm"] is False
 
 
-async def test_snapshot_says_which_room_you_are_in(hass, hass_ws_client, make_entry):
-    from .conftest import room_data
+async def test_snapshot_says_which_area_you_are_in(hass, hass_ws_client, make_entry):
+    from .conftest import make_area
 
-    hass.states.async_set("binary_sensor.motion_office", "on")
-    await make_entry(
-        type_data("washer"), room_data("office", ["binary_sensor.motion_office"], "alexa_office")
-    )
+    area = make_area(hass, "Home office")
+    hass.states.async_set("sensor.room_presence", area)
+    await make_entry(type_data("washer"), room_provider="sensor.room_presence")
     client = await hass_ws_client(hass)
-    assert (await _snapshot(client))["room"] == "Office"
+    assert (await _snapshot(client))["room"] == "Home office"
+
+    hass.states.async_set("sensor.room_presence", "none")  # the provider follows you around
+    update = (await client.receive_json())["event"]
+    assert update["room"] is None
 
 
-async def test_snapshot_without_rooms_has_no_room(hass, hass_ws_client, make_entry):
+async def test_snapshot_without_a_provider_has_no_place(hass, hass_ws_client, make_entry):
     await make_entry(type_data("washer"))
     client = await hass_ws_client(hass)
     assert (await _snapshot(client))["room"] is None

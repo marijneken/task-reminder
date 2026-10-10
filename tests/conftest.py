@@ -14,7 +14,7 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from custom_components.task_reminder.const import DOMAIN, SUBENTRY_ROOM, SUBENTRY_TYPE
+from custom_components.task_reminder.const import DOMAIN, SUBENTRY_TYPE
 
 START = datetime(2026, 10, 9, 12, 0, tzinfo=UTC)
 
@@ -45,6 +45,41 @@ def type_data(key: str, **overrides: Any) -> ConfigSubentryData:
     )
 
 
+def make_area(hass, name):
+    """Create a Home Assistant area and return its id (the slug of the name)."""
+    from homeassistant.helpers import area_registry as ar
+
+    registry = ar.async_get(hass)
+    existing = registry.async_get_area_by_name(name)
+    return existing.id if existing else registry.async_create(name).id
+
+
+def place_entity(hass, entity_id, area_id=None, device_area_id=None, config_entry_id=None):
+    """Register an entity and give it an area, directly or through its device."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    domain, object_id = entity_id.split(".", 1)
+    device_id = None
+    if device_area_id is not None:
+        device = dr.async_get(hass).async_get_or_create(
+            config_entry_id=config_entry_id, identifiers={("test", object_id)}
+        )
+        dr.async_get(hass).async_update_device(device.id, area_id=device_area_id)
+        device_id = device.id
+    entry = er.async_get(hass).async_get_or_create(
+        domain,
+        "test",
+        object_id,
+        suggested_object_id=object_id,
+        device_id=device_id,
+        config_entry=None,
+    )
+    if area_id is not None:
+        er.async_get(hass).async_update_entity(entry.entity_id, area_id=area_id)
+    return entry.entity_id
+
+
 def sent(calls):
     """The reminders in a list of notify calls, without the clear_notification commands that
     remove an older notification when a new one is sent."""
@@ -62,15 +97,6 @@ def on_screen(calls):
         elif tag not in shown:
             shown.append(tag)
     return shown
-
-
-def room_data(key: str, presence: list[str] | None = None, alexa: str | None = None):
-    data = {"key": key, "name": key.title(), "presence_entities": presence or []}
-    if alexa:
-        data["alexa_service"] = alexa
-    return ConfigSubentryData(
-        data=data, subentry_type=SUBENTRY_ROOM, title=data["name"], unique_id=f"room_{key}"
-    )
 
 
 @pytest.fixture

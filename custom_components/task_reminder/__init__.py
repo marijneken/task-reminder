@@ -16,9 +16,10 @@ from homeassistant.core import (
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.start import async_at_started
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
-from .const import ADHOC_KEY, DOMAIN, SILENCE_MODES
+from .const import ADHOC_KEY, DOMAIN, SILENCE_MODES, STORAGE_KEY, STORAGE_VERSION
 from .manager import TaskManager
 from .panel import async_setup_panel
 
@@ -156,6 +157,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: TaskReminderConfigEntry)
 async def async_unload_entry(hass: HomeAssistant, entry: TaskReminderConfigEntry) -> bool:
     """Unload; running tasks stay in storage."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: TaskReminderConfigEntry) -> None:
+    """The integration was removed for good: forget its tasks too, so adding it again starts
+    clean instead of bringing old reminders back."""
+    await Store(hass, STORAGE_VERSION, STORAGE_KEY).async_remove()
 
 
 async def _reload(hass: HomeAssistant, entry: TaskReminderConfigEntry) -> None:

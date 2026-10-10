@@ -12,7 +12,6 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     ADHOC_KEY,
-    CONF_ALEXA_SERVICE,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
@@ -29,7 +28,6 @@ from .const import (
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_NAME,
-    CONF_PRESENCE_ENTITIES,
     CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
     CONF_RING,
@@ -149,26 +147,6 @@ ADHOC_TYPE = TaskType(
     single_instance=False,
     ring=True,  # a timer or alarm: keeps going off until you stop it
 )
-
-
-@dataclass(frozen=True, slots=True)
-class Room:
-    """A room with presence sensors and (optionally) an Alexa speaker."""
-
-    key: str
-    name: str
-    presence_entities: tuple[str, ...] = ()
-    alexa_service: str | None = None
-
-    @classmethod
-    def from_data(cls, data: dict[str, Any]) -> Room:
-        """Build from the stored subentry data."""
-        return cls(
-            key=data[CONF_KEY],
-            name=data[CONF_NAME],
-            presence_entities=tuple(data.get(CONF_PRESENCE_ENTITIES) or ()),
-            alexa_service=data.get(CONF_ALEXA_SERVICE) or None,
-        )
 
 
 class TaskStatus(StrEnum):
