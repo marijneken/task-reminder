@@ -63,12 +63,11 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
   a sound that lives on your phone: check the file on your Mac (Finder, Get Info, or QuickTime). iOS plays at
   most 30 seconds of a custom sound.
 - A reminder rings for at most **ring for** minutes (default 3); the next regular reminder rings again.
-- Every reminder and every re-trigger is a **new notification** with a tag of its own (a notification that
-  replaces one still on screen makes no sound on iOS). **Notifications to keep per task** (integration
-  settings, default **1**) decides what happens to the older ones: with 1 the new one is sent first and the
-  previous one is removed right after it (it can vanish for a moment before the new one has arrived). With a
-  higher number that many stay in the notification list and pile up, the oldest removed beyond that; 100 means
-  everything piles up. Set it back to 1 to revert. Done, snooze and dismiss always remove the whole pile.
+- Every reminder and every re-trigger is a **new notification** with a tag of its own, and the previous one is
+  removed right after the new one is sent. Both matter on iOS: a notification that replaces one with the same
+  tag makes no sound, and neither does a new one while the old one is still on screen. (So the old notification
+  can vanish for a moment before the new one has arrived; that is the best that can be done.) Done, snooze and
+  dismiss remove the notification.
 - Only the phone rings, never Alexa or your other devices.
 - **Critical alerts keep working**: when a reminder is a critical alert (the keeps-going stage), its re-triggers
   are critical alerts too, so they get through the silent switch and Focus. iOS cannot replace or group critical
@@ -130,6 +129,11 @@ A **Tasks** item appears in the sidebar and shows everything at a glance, live:
 
 Times and dates follow your Home Assistant profile (12/24 hour, language, date order and the local or server
 time zone), not the browser's defaults. The panel's own labels are English.
+
+The **Settings** button in the panel's header (administrators only) takes you to the Task Reminder integration
+with your entry highlighted, so changing a setting or adding a task type or room is one click on *Configure* (or the
+entry's menu) away. Home Assistant has no link that opens that dialog directly. Use the browser's back button to
+return to the panel.
 
 Tasks that are not due yet have **Cancel**, which drops them without side effects (no chained task, no flag reset).
 

@@ -37,6 +37,12 @@ async def test_snapshot_describes_running_tasks(hass, hass_ws_client, make_entry
     assert snap["history"] == []
 
 
+async def test_snapshot_tells_the_panel_which_entry_to_open(hass, hass_ws_client, make_entry):
+    entry = await make_entry(type_data("washer"))
+    client = await hass_ws_client(hass)
+    assert (await _snapshot(client))["entry_id"] == entry.entry_id
+
+
 async def test_snapshot_marks_ringing_tasks(hass, hass_ws_client, make_entry):
     await make_entry(type_data("alarm", ring=True), type_data("quiet"))
     await hass.services.async_call(DOMAIN, "start", {"type": "alarm"}, blocking=True)

@@ -39,7 +39,6 @@ from .const import (
     CONF_KEY,
     CONF_NAME,
     CONF_NOTIFICATION_SOUND,
-    CONF_NOTIFICATIONS_KEPT,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
@@ -65,7 +64,6 @@ from .const import (
     CONF_TURN_OFF_PLAYERS,
     DEFAULT_DONE_WINDOW_MINUTES,
     DEFAULT_KEEPS_GOING_MINUTES,
-    DEFAULT_NOTIFICATIONS_KEPT,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_REPEAT_MINUTES,
@@ -136,9 +134,6 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
             vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(5, 120, "s"),
             vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(1, 30, "min"),
-            vol.Optional(CONF_NOTIFICATIONS_KEPT, default=DEFAULT_NOTIFICATIONS_KEPT): _number(
-                1, 100, ""
-            ),
             vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),

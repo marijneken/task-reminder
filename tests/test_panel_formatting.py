@@ -30,7 +30,7 @@ const ctx = vm.createContext({
   HTMLElement: class {}, customElements: { get: () => true, define() {} },
   setInterval() {}, clearInterval() {}, setTimeout() {}, clearTimeout() {},
 });
-vm.runInContext(fs.readFileSync(process.argv[1], "utf8") + "\n;globalThis.__make = makeFormatters;", ctx);
+vm.runInContext(fs.readFileSync(process.argv[1], "utf8") + "\n;globalThis.__make = makeFormatters; globalThis.__settingsPath = settingsPath;", ctx);
 const cases = JSON.parse(process.argv[2]);
 const out = cases.map((c) => {
   const f = ctx.__make({ locale: c.locale, language: c.locale.language, config: { time_zone: c.server_tz } });
@@ -139,3 +139,17 @@ def test_dates_without_a_time_do_not_shift_with_the_time_zone():
     for tz in ("Pacific/Auckland", "America/Los_Angeles"):
         (item,) = run([case(locale={"time_zone": "local", "date_format": "DMY"})], tz=tz)
         assert item["day"] == "Thu 15 Oct"
+
+
+def test_settings_button_goes_to_the_integration_with_the_entry_highlighted():
+    script = SCRIPT.split("const cases")[0] + (
+        "console.log(JSON.stringify([ctx.__settingsPath('abc123'), ctx.__settingsPath(), "
+        "ctx.__settingsPath('a b/c')]));"
+    )
+    result = subprocess.run(
+        ["node", "-e", script, str(PANEL)], capture_output=True, text=True, check=True
+    )
+    with_id, without_id, odd = json.loads(result.stdout)
+    assert with_id == "/config/integrations/integration/task_reminder#config_entry=abc123"
+    assert without_id == "/config/integrations/integration/task_reminder"
+    assert odd.endswith("#config_entry=a%20b%2Fc")  # always safe to put in a URL

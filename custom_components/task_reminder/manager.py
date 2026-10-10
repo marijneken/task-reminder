@@ -37,7 +37,6 @@ from .const import (
     CONF_ALEXA_SERVICES,
     CONF_EXTRA_SERVICES,
     CONF_NOTIFICATION_SOUND,
-    CONF_NOTIFICATIONS_KEPT,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
     CONF_PHONE_SERVICES,
@@ -47,7 +46,6 @@ from .const import (
     CONF_RING_SECONDS,
     CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
-    DEFAULT_NOTIFICATIONS_KEPT,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_RING_MINUTES,
@@ -62,7 +60,6 @@ from .const import (
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
-    MAX_NOTIFICATIONS_KEPT,
     MIN_RING_SECONDS,
     PUSH_DAILY_BUDGET,
     ROOM_RECENT,
@@ -240,18 +237,12 @@ class TaskManager:
         task.ring_count += 1
         return f"{tag_for(task.id)}_{task.ring_count}"
 
-    def _kept(self) -> int:
-        kept = self.settings.get(CONF_NOTIFICATIONS_KEPT) or DEFAULT_NOTIFICATIONS_KEPT
-        return max(1, min(int(kept), MAX_NOTIFICATIONS_KEPT))
-
     async def _remember_sent(self, task: Task, tag: str) -> None:
-        """The new notification has been sent: remove the oldest ones beyond how many may stay.
-        With 1 the previous one goes right after the new one; with more they pile up."""
-        task.tags.append(tag)
-        excess = task.tags[: -self._kept()] if len(task.tags) > self._kept() else []
-        if excess:
-            task.tags = task.tags[len(excess) :]
-            await self.notifier.async_clear_tags(excess)
+        """The new notification has been sent: remove the previous one right after it. Leaving
+        the old one on screen makes the new one silent on iOS, so only the newest stays."""
+        older, task.tags = task.tags, [tag]
+        if older:
+            await self.notifier.async_clear_tags(older)
 
     def _stop_ringing(self, task: Task) -> None:
         task.ring_at = None

@@ -137,6 +137,11 @@ const fmtRel = (iso) => {
 
 const rel = (iso) => `<span class="rel" data-ts="${esc(iso)}">${esc(fmtRel(iso))}</span>`;
 
+// Where "Settings" goes. Home Assistant has no link that opens an integration's settings dialog, so
+// this opens the integration page with our entry highlighted: Configure is one click away.
+const settingsPath = (entryId) =>
+  "/config/integrations/integration/task_reminder" + (entryId ? `#config_entry=${encodeURIComponent(entryId)}` : "");
+
 class TaskReminderPanel extends HTMLElement {
   constructor() {
     super();
@@ -233,6 +238,11 @@ class TaskReminderPanel extends HTMLElement {
         ${this._narrow ? `<ha-menu-button></ha-menu-button>` : ""}
         <div class="title">Tasks</div>
         ${d.room ? `<div class="where" title="Where reminders are announced first"><ha-icon icon="mdi:map-marker"></ha-icon> ${esc(d.room)}</div>` : ""}
+        ${
+          this._hass && this._hass.user && this._hass.user.is_admin
+            ? `<button class="settings" data-act="settings" title="Open the Task Reminder integration to change its settings, add task types or rooms"><ha-icon icon="mdi:cog"></ha-icon><span>Settings</span></button>`
+            : ""
+        }
       </div>
       <div class="content">
         ${
@@ -493,6 +503,12 @@ class TaskReminderPanel extends HTMLElement {
     }
   }
 
+  _openSettings() {
+    // The same thing Home Assistant's own navigation does: change the URL and tell the frontend.
+    history.pushState(null, "", settingsPath(this._data.entry_id));
+    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false }, bubbles: true, composed: true }));
+  }
+
   async _remind() {
     const msg = { type: "task_reminder/remind", title: this._form.title.trim() };
     if (this._form.minutes !== "" && Number(this._form.minutes) > 0) msg.minutes = Number(this._form.minutes);
@@ -512,6 +528,7 @@ class TaskReminderPanel extends HTMLElement {
     else if (act === "dismiss") await this._call({ type: "task_reminder/dismiss", task_id: id });
     else if (act === "start") await this._call({ type: "task_reminder/start", task_type: el.dataset.type }, "Started");
     else if (act === "remind") await this._remind();
+    else if (act === "settings") this._openSettings();
     else if (act === "preset") {
       this._form.minutes = el.dataset.minutes;
       this._render();
@@ -539,6 +556,10 @@ const STYLE = `
   .where { display:inline-flex; align-items:center; gap:4px; font-size:13px; padding:3px 10px 3px 6px; border-radius:14px;
            background: rgba(255,255,255,.16); }
   .where ha-icon { --mdc-icon-size: 16px; }
+  button.settings { background: rgba(255,255,255,.16); color: inherit; border-color: transparent; padding: 5px 12px 5px 8px; font-size: 14px; }
+  button.settings:hover:not(:disabled) { background: rgba(255,255,255,.28); border-color: transparent; }
+  button.settings ha-icon { --mdc-icon-size: 18px; }
+  @media (max-width: 700px) { button.settings span { display: none; } button.settings { padding: 6px; } }
   .content { max-width: 900px; margin: 0 auto; padding: 16px; box-sizing:border-box; }
   ha-icon { --mdc-icon-size: 20px; }
   button { font: inherit; border-radius: 18px; border: 1px solid var(--divider-color); background: var(--card-background-color);

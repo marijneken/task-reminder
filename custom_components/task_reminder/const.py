@@ -23,9 +23,6 @@ CONF_TAP_URL = "tap_url"
 CONF_RING = "ring"  # per task type: keep re-triggering the sound until answered
 CONF_RING_SECONDS = "ring_seconds"  # hub default and per task type override
 CONF_RING_MINUTES = "ring_minutes"  # how long one reminder keeps ringing at most
-CONF_NOTIFICATIONS_KEPT = (
-    "notifications_kept"  # how many of a task's notifications stay on the phone
-)
 CONF_PRESENCE_ENTITIES = "presence_entities"
 CONF_ALEXA_SERVICE = "alexa_service"
 CONF_NOTIFICATION_SOUND = "notification_sound"
@@ -139,8 +136,6 @@ HISTORY_LIMIT = 10
 DEFAULT_RING_SECONDS = 12  # about the length of the sound
 MIN_RING_SECONDS = 5
 DEFAULT_RING_MINUTES = 3
-DEFAULT_NOTIFICATIONS_KEPT = 1  # each new one removes the previous; more lets them pile up
-MAX_NOTIFICATIONS_KEPT = 100
 # The Companion app allows 500 pushes a day per device (critical alerts and commands such as
 # clear_notification do not count). Ringing stops here so other notifications keep working.
 PUSH_DAILY_BUDGET = 350

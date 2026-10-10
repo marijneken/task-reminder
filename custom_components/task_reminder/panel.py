@@ -154,6 +154,7 @@ def _snapshot(hass: HomeAssistant) -> dict[str, Any]:
     return {
         "ready": True,
         "now": dt_util.utcnow().isoformat(),
+        "entry_id": mgr.entry.entry_id,
         "silence": {"mode": mgr.silence.mode, "until": _iso(mgr.silence.until)},
         "room": room.name if (room := mgr.current_room()) else None,
         "tasks": [_task_dict(mgr, t) for t in mgr.tasks.values()],
