@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import replace
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -26,6 +26,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_track_point_in_utc_time,
     async_track_state_change_event,
+    async_track_time_change,
 )
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -401,6 +402,24 @@ class TaskManager:
                     self.hass, [task_type.schedule_entity], _schedule_changed
                 )
             )
+
+            end = task_type.collection_end_time
+            if end:
+
+                @callback
+                def _collection_over(_now: datetime, task_type: TaskType = task_type) -> None:
+                    if self._started:
+                        self.hass.async_create_task(self._async_schedule_check(task_type))
+
+                self._unsubs.append(
+                    async_track_time_change(
+                        self.hass,
+                        _collection_over,
+                        hour=end.hour,
+                        minute=end.minute,
+                        second=end.second,
+                    )
+                )
 
         provider = self.settings.get(CONF_ROOM_PROVIDER)
         if provider:
@@ -936,23 +955,49 @@ class TaskManager:
             _LOGGER.debug("%s has no usable %s", task_type.schedule_entity, ATTR_DAYS_UNTIL)
             return
         collection = str(state.attributes.get(ATTR_SORT_DATE) or state.state)
+        now_local = dt_util.now()
+        collection_day = now_local.date() + timedelta(days=days)  # Days_until is relative to today
+        end = task_type.collection_end_time
+        # Past the end of collection day (e.g. 08:00): the bins are gone, stop reminding.
+        over = bool(end) and collection_day == now_local.date() and now_local.time() >= end
 
         async with self._lock:
             for task in self._active(task_type.key):
-                if task.extra.get("collection") not in (None, collection):
+                if task.extra.get("collection") not in (None, collection) or (
+                    over and task.extra.get("collection") == collection
+                ):
                     # The collection it was for has passed.
                     await self._finish(task, "expired", chain=False)
-            if 0 <= days <= task_type.start_days_before and (
-                self.marks.get(task_type.key) != collection
+            if (
+                not over
+                and 0 <= days <= task_type.start_days_before
+                and self.marks.get(task_type.key) != collection
             ):
                 self.marks[task_type.key] = collection
-                late = days < task_type.start_days_before
                 already = bool(self._active(task_type.key))
-                task = self._start_locked(task_type.key, due_at=dt_util.utcnow() if late else None)
+                task = self._start_locked(
+                    task_type.key, due_at=self._schedule_due(task_type, collection_day)
+                )
                 if not already or "collection" not in task.extra:
                     task.extra["collection"] = collection
             await self._commit()
         await self.async_process()
+
+    @staticmethod
+    def _schedule_due(task_type: TaskType, collection_day: date) -> datetime | None:
+        """When a collection task is due: the due time on the start day (collection day minus
+        start_days_before), or at once when that moment has already passed. Without a due time
+        the task's normal due rules apply, or it is due at once when the start was missed."""
+        now = dt_util.utcnow()
+        start_day = collection_day - timedelta(days=task_type.start_days_before)
+        if task_type.due_time:
+            due = dt_util.as_utc(
+                datetime.combine(
+                    start_day, task_type.due_time, tzinfo=dt_util.get_default_time_zone()
+                )
+            )
+            return max(due, now)
+        return now if dt_util.as_local(now).date() > start_day else None
 
     def _tag_matches(self, tag_entity: str | None, tag_id: str) -> bool:
         state = self.hass.states.get(tag_entity) if tag_entity else None

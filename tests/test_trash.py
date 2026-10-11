@@ -117,3 +117,50 @@ async def test_two_door_sequence(hass, freezer, make_entry):
     freezer.tick(timedelta(minutes=6))
     await open_door("binary_sensor.porch_door")
     assert len(manager.tasks) == 1
+
+
+async def test_bin_out_then_bin_back_with_the_same_two_doors(hass, freezer, notify, make_entry):
+    """Put the bin out the evening before (schedule, 18:00), which starts "bring it back"
+    (16:00 on collection day); both finish with the same back door + porch door sequence."""
+    doors = {
+        "done_entity": "binary_sensor.back_door",
+        "done_then_entity": "binary_sensor.porch_door",
+        "done_window_minutes": 5,
+    }
+    entry = await make_entry(
+        type_data(
+            "papier",
+            schedule_entity="sensor.almere_papier",
+            due_time="18:00:00",
+            then_start="papier_back",
+            **doors,
+        ),
+        type_data("papier_back", due_time="16:00:00", **doors),
+    )
+    manager = entry.runtime_data
+
+    async def through_the_doors():
+        for entity in ("binary_sensor.back_door", "binary_sensor.porch_door"):
+            hass.states.async_set(entity, "off")
+            hass.states.async_set(entity, "on")
+            await hass.async_block_till_done()
+
+    hass.states.async_set(
+        "sensor.almere_papier", "x", {"Sort_date": 20261010, "Days_until": 1}
+    )  # collection tomorrow
+    await hass.async_block_till_done()
+    await through_the_doors()  # before 18:00: nothing is due yet, nothing counts
+    assert [t.type_key for t in manager.tasks.values()] == ["papier"]
+
+    await advance(hass, freezer, hours=6)  # 18:00
+    assert len(sent(notify["phone"])) == 1
+    await through_the_doors()  # the bin is out
+    assert [t.type_key for t in manager.tasks.values()] == ["papier_back"]
+
+    await through_the_doors()  # the same doors again, too early: the bin is not back yet
+    assert [t.type_key for t in manager.tasks.values()] == ["papier_back"]
+
+    await advance(hass, freezer, hours=22)  # 16:00 on collection day
+    assert sent(notify["phone"])[-1].data["message"] == "Papier_Back is due"
+    await through_the_doors()  # the bin is back
+    assert manager.tasks == {}

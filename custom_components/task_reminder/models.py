@@ -12,6 +12,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     ADHOC_KEY,
+    CONF_COLLECTION_END_TIME,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
@@ -83,6 +84,7 @@ class TaskType:
     good_moment_entities: tuple[str, ...] = ()
     schedule_entity: str | None = None
     start_days_before: int = DEFAULT_START_DAYS_BEFORE
+    collection_end_time: time | None = None
     quiet_without_flag: bool = False
     done_then_entity: str | None = None
     done_then_state: str = DEFAULT_TRIGGER_STATE
@@ -92,6 +94,7 @@ class TaskType:
     def from_data(cls, data: dict[str, Any]) -> TaskType:
         """Build from the stored subentry data."""
         due_time = data.get(CONF_DUE_TIME)
+        end_time = data.get(CONF_COLLECTION_END_TIME)
         duration = data.get(CONF_DURATION_MINUTES)
         return cls(
             key=data[CONF_KEY],
@@ -122,6 +125,7 @@ class TaskType:
             good_moment_entities=tuple(data.get(CONF_GOOD_MOMENT_ENTITIES) or ()),
             schedule_entity=data.get(CONF_SCHEDULE_ENTITY) or None,
             start_days_before=int(data.get(CONF_START_DAYS_BEFORE, DEFAULT_START_DAYS_BEFORE)),
+            collection_end_time=time.fromisoformat(end_time) if end_time else None,
             quiet_without_flag=data.get(CONF_QUIET_WITHOUT_FLAG, False),
             done_then_entity=data.get(CONF_DONE_THEN_ENTITY) or None,
             done_then_state=data.get(CONF_DONE_THEN_STATE) or DEFAULT_TRIGGER_STATE,

@@ -125,10 +125,14 @@ end time) either drops critical alerts or holds everything.
 - **Fill flag entity** (e.g. an `input_boolean` "bin has waste"): flag off makes the task
   dismissable with a lighter ladder; completing the task turns the flag off. With
   "quiet heads-up" a flag-off task sends one passive notification and ends.
-- **Collection schedule sensor** (afvalbeheer, uses its `Days_until` and `Sort_date`
-  attributes) with **start N days before**: the task starts once per collection date,
-  immediately if that moment was missed, and ends as `expired` once the collection has
-  passed. Combine with "Due at time of day" (e.g. 19:00 the evening before).
+- **Collection schedule sensor** (afvalbeheer, uses its `Days_until` attribute) with **start N days
+  before**: the task is created once per collection date, and "Due at time of day" is the time on the
+  start day (e.g. 18:00 the evening before) when the reminders begin. If that moment has already passed
+  when the schedule flips, the first reminder comes at once. Until then it waits in the panel's "Coming
+  up", and a done trigger does not count yet. **Stop reminding at** (optional, e.g. 08:00) ends the task
+  on collection day (`expired`); without it the task ends when the sensor moves on to the next collection.
+  To bring the bin back later, make a second type (due 16:00, same done doors) and link it with
+  "When done, start" on the first one: it starts when the first is done and needs the doors again.
 - **NFC tags**: start and/or done on a scanned tag (pick tags from Settings, Tags). A scan always
   completes the task, even before it is due; the same tag for start and done toggles.
 - **Good moments**: binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them

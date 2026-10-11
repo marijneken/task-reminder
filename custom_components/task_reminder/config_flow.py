@@ -20,6 +20,7 @@ from homeassistant.util import slugify
 from .const import (
     ADHOC_KEY,
     CONF_ALEXA_SPEAKERS,
+    CONF_COLLECTION_END_TIME,
     CONF_DISMISSABLE,
     CONF_DONE_ENTITY,
     CONF_DONE_STATE,
@@ -225,6 +226,7 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
         vol.Optional(CONF_START_DAYS_BEFORE, default=DEFAULT_START_DAYS_BEFORE): minutes(
             0, 14, "d"
         ),
+        vol.Optional(CONF_COLLECTION_END_TIME): selector.TimeSelector(),
         vol.Optional(CONF_SOUND): _sound_selector(),
         vol.Optional(CONF_RING, default=False): selector.BooleanSelector(),
         vol.Optional(CONF_RING_SECONDS): _number(5, 120, "s"),
