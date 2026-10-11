@@ -13,6 +13,7 @@
           "quiet_end": "Quiet hours end",
           "pause_players": "Pause these media players",
           "tap_url": "Open this page when a reminder is tapped",
+          "live_activities": "Countdown on the lock screen (iPhone)",
           "notification_sound": "Notification sound (iPhone)",
           "turn_off_players": "Turn these off as a last resort",
           "ring_seconds": "Ring interval (seconds)",
@@ -23,6 +24,7 @@
         "data_description": {
           "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
           "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
+          "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
           "tap_url": "Optional dashboard path such as /lovelace/reminders. Empty opens Home Assistant at its default page.",
           "notification_sound": "Pick a sound, or type the exact file name of one you imported in the Companion app (with extension). iOS system sounds (.caf) must first be imported once: in the app, Settings, Companion App, Notifications, Sounds, System tab, Import system sounds, then restart the phone. Empty uses the default sound. Critical alerts use it too.",
           "turn_off_players": "Typically your TV. When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if still on. Never while silencing is active.",
@@ -51,6 +53,7 @@
           "quiet_end": "Quiet hours end",
           "pause_players": "Pause these media players",
           "tap_url": "Open this page when a reminder is tapped",
+          "live_activities": "Countdown on the lock screen (iPhone)",
           "notification_sound": "Notification sound (iPhone)",
           "turn_off_players": "Turn these off as a last resort",
           "ring_seconds": "Ring interval (seconds)",

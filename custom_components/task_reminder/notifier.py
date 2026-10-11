@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -149,6 +150,20 @@ class Notifier:
                     )
                 )
         return await self._send_all(calls)
+
+    async def async_live(self, *, tag: str, title: str, message: str, when: datetime) -> int:
+        """Show (or update, same tag) an iOS Live Activity that counts down to `when`. The phone
+        counts by itself, so one push is enough. Phones only."""
+        data: dict[str, Any] = {
+            "tag": tag,
+            "live_update": True,
+            "chronometer": True,
+            "when": int(when.timestamp()),
+            **self._tap(),
+        }
+        return await self._send_all(
+            [(s, {"title": title, "message": message, "data": dict(data)}) for s in self.phone]
+        )
 
     async def async_quiet(self, *, task_id: str, message: str) -> int:
         """One quiet, passive notification (used while away)."""

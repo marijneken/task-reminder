@@ -40,6 +40,7 @@ from .const import (
     ATTR_SORT_DATE,
     CONF_ALEXA_SPEAKERS,
     CONF_EXTRA_SERVICES,
+    CONF_LIVE_ACTIVITIES,
     CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
     CONF_PERSON,
@@ -67,6 +68,7 @@ from .const import (
     HOLD_AWAY,
     HOLD_QUIET,
     HOLD_SILENT,
+    LIVE_WINDOW,
     MIN_RING_SECONDS,
     PUSH_DAILY_BUDGET,
     SIGNAL_UPDATE,
@@ -239,6 +241,8 @@ class TaskManager:
     async def _clear_notifications(self, task: Task) -> None:
         """Remove everything this task has on the phones (its notifications and the away note)."""
         tags = [tag_for(task.id), *task.tags]
+        if task.extra.pop("live", None):
+            tags.append(self._live_tag(task))
         task.tags = []
         await self.notifier.async_clear_tags(tags)
 
@@ -476,9 +480,50 @@ class TaskManager:
 
     async def _commit(self) -> None:
         """Save, reschedule and tell the entities."""
+        await self._sync_live()
         await self._async_save()
         self._schedule()
         async_dispatcher_send(self.hass, SIGNAL_UPDATE)
+
+    # -- live activities: a countdown on the lock screen for what is coming up ----------
+
+    def _live_tag(self, task: Task) -> str:
+        return f"{tag_for(task.id)}_live"
+
+    def _live_target(self, task: Task, now: datetime) -> datetime | None:
+        """When the countdown should end, or None when no activity should be shown: only for a
+        task waiting for its due time or its snooze to end, within the window iOS allows, and
+        never where a reminder would not be delivered now (silenced, quiet hours, away)."""
+        if not self.settings.get(CONF_LIVE_ACTIVITIES):
+            return None
+        if task.status not in (TaskStatus.ARMED, TaskStatus.SNOOZED) or not task.next_at:
+            return None
+        if not now < task.next_at <= now + LIVE_WINDOW:
+            return None
+        task_type = self._type_of(task)
+        if task_type is None or self._hold(task, task_type, now):
+            return None
+        return task.next_at
+
+    async def _sync_live(self) -> None:
+        now = dt_util.utcnow()
+        for task in list(self.tasks.values()):
+            shown = task.extra.get("live")
+            target = self._live_target(task, now)
+            if target is None:
+                if shown:
+                    task.extra.pop("live", None)
+                    await self.notifier.async_clear_tags([self._live_tag(task)])
+            elif shown != target.isoformat():
+                at = dt_util.as_local(target).strftime("%H:%M")
+                verb = "Reminder" if task.status is TaskStatus.SNOOZED else "Due"
+                if await self.notifier.async_live(
+                    tag=self._live_tag(task),
+                    title=task.title,
+                    message=f"{verb} at {at}",
+                    when=target,
+                ):
+                    task.extra["live"] = target.isoformat()
 
     def _schedule(self) -> None:
         if self._unsub_timer:
@@ -487,6 +532,15 @@ class TaskManager:
         if not self._started:
             return
         times = [t.next_at for t in self.tasks.values() if t.next_at]
+        if self.settings.get(CONF_LIVE_ACTIVITIES):  # wake up when a countdown can start
+            now = dt_util.utcnow()
+            times += [
+                t.next_at - LIVE_WINDOW
+                for t in self.tasks.values()
+                if t.next_at
+                and t.status in (TaskStatus.ARMED, TaskStatus.SNOOZED)
+                and t.next_at - LIVE_WINDOW > now
+            ]
         times += [
             t.ring_at for t in self.tasks.values() if t.ring_at and t.status is TaskStatus.NOTIFYING
         ]

@@ -37,6 +37,7 @@ from .const import (
     CONF_GOOD_MOMENT_ENTITIES,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
+    CONF_LIVE_ACTIVITIES,
     CONF_NAME,
     CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
@@ -136,6 +137,7 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
             vol.Optional(CONF_TAP_URL): selector.TextSelector(),
+            vol.Optional(CONF_LIVE_ACTIVITIES, default=False): selector.BooleanSelector(),
             vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
             vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(5, 120, "s"),
             vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(1, 30, "min"),
