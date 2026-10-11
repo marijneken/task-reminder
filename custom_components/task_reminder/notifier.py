@@ -41,8 +41,10 @@ class Notifier:
         alexa: list[str],  # media_player entity ids of the Echo speakers
         extra: list[str],
         tap_url: str | None = None,
+        tv: list[str] | None = None,  # TV notify services (webOS toasts), plain text
     ) -> None:
         self.hass = hass
+        self.tv = tv or []
         self.phone = phone
         self.alexa = alexa
         self.extra = extra
@@ -53,13 +55,15 @@ class Notifier:
     @property
     def configured(self) -> bool:
         """True when at least one notify service is configured."""
-        return bool(self.phone or self.alexa or self.extra)
+        return bool(self.phone or self.alexa or self.extra or self.tv)
 
     async def _call(self, service: str, payload: dict[str, Any]) -> bool:
         try:
             await self.hass.services.async_call("notify", service, payload, blocking=True)
         except Exception:
-            _LOGGER.warning("Notify service notify.%s failed", service, exc_info=True)
+            # A TV that is off cannot show a toast: expected, not worth a warning.
+            level = logging.DEBUG if service in self.tv else logging.WARNING
+            _LOGGER.log(level, "Notify service notify.%s failed", service, exc_info=True)
             return False
         if self.on_push and service in (*self.phone, *self.extra) and self._counts(payload):
             self.on_push()
@@ -149,6 +153,10 @@ class Notifier:
                         {"message": message, "target": list(targets), "data": {"type": "announce"}},
                     )
                 )
+        if plan.extra and self.tv:
+            # A toast on the TV: just the text (a TV has no title, buttons or sounds to choose),
+            # and it does not count as delivered: the TV is often off.
+            await self._send_all([(s, {"message": message}) for s in self.tv])
         return await self._send_all(calls)
 
     async def async_live(self, *, tag: str, title: str, message: str, when: datetime) -> int:

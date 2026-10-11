@@ -91,6 +91,13 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
   count; the other re-triggers do. Ringing with ordinary notifications stops at 350 pushes for the day, so the
   rest keep working, and a Repairs message says so. Critical ringing is never stopped by this.
 
+## A toast on the TV
+
+Choose the notify service of a TV (for example the LG webOS one) under **TV notify services**. From the
+third reminder on, together with the other devices, the TV shows a plain toast with the reminder text. It has
+no title, buttons or sound, and a TV that is off is skipped without a warning. The iPad and Mac keep using
+the normal notification: they are Companion apps and take the same payload as the phone.
+
 ## Countdown on the lock screen (iPhone, optional)
 
 Switch on **Countdown on the lock screen** in the settings and a timer (`remind` with a delay), or a task

@@ -53,6 +53,7 @@ from .const import (
     CONF_ROOM_PROVIDER,
     CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
+    CONF_TV_SERVICES,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DEFAULT_RING_MINUTES,
@@ -135,6 +136,7 @@ class TaskManager:
             list(s.get(CONF_ALEXA_SPEAKERS, [])),
             list(s.get(CONF_EXTRA_SERVICES, [])),
             s.get(CONF_TAP_URL),
+            list(s.get(CONF_TV_SERVICES, [])),
         )
 
     def _reload_types(self) -> None:

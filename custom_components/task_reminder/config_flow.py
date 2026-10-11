@@ -64,6 +64,7 @@ from .const import (
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
     CONF_TURN_OFF_PLAYERS,
+    CONF_TV_SERVICES,
     DEFAULT_DONE_WINDOW_MINUTES,
     DEFAULT_KEEPS_GOING_MINUTES,
     DEFAULT_QUIET_END,
@@ -133,6 +134,7 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 )
             ),
             vol.Optional(CONF_EXTRA_SERVICES, default=[]): notify,
+            vol.Optional(CONF_TV_SERVICES, default=[]): notify,
             vol.Optional(CONF_PAUSE_PLAYERS, default=[]): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="media_player", multiple=True)
             ),
