@@ -45,6 +45,8 @@ class Notifier:
     ) -> None:
         self.hass = hass
         self.tv = tv or []
+        # A TV is never a phone: should it be listed in both, it only gets the plain toast.
+        extra = [service for service in extra if service not in self.tv]
         self.phone = phone
         self.alexa = alexa
         self.extra = extra
@@ -153,11 +155,15 @@ class Notifier:
                         {"message": message, "target": list(targets), "data": {"type": "announce"}},
                     )
                 )
-        if plan.extra and self.tv:
-            # A toast on the TV: just the text (a TV has no title, buttons or sounds to choose),
-            # and it does not count as delivered: the TV is often off.
-            await self._send_all([(s, {"message": message}) for s in self.tv])
+        if plan.extra:
+            await self.async_tv(message)
         return await self._send_all(calls)
+
+    async def async_tv(self, message: str) -> None:
+        """A toast on the TV: just the text (a TV has no title, buttons or sounds to choose). It
+        does not count as delivered, the TV is often off, and it clears itself after a while, so
+        it is sent again rather than removed."""
+        await self._send_all([(s, {"message": message}) for s in self.tv])
 
     async def async_live(self, *, tag: str, title: str, message: str, when: datetime) -> int:
         """Show (or update, same tag) an iOS Live Activity that counts down to `when`. The phone

@@ -95,8 +95,10 @@ sound on the phone, like a timer on Alexa, until you **snooze, complete or dismi
 
 Choose the notify service of a TV (for example the LG webOS one) under **TV notify services**. From the
 third reminder on, together with the other devices, the TV shows a plain toast with the reminder text. It has
-no title, buttons or sound, and a TV that is off is skipped without a warning. The iPad and Mac keep using
-the normal notification: they are Companion apps and take the same payload as the phone.
+no title, buttons or sound, and a TV that is off is skipped without a warning. The toast disappears by
+itself, so a ringing reminder shows it again every time the phone rings again. Put the TV here and not under
+**Other devices** (the iPad and Mac belong there: they are Companion apps and take the phone's payload); a TV
+listed in both only gets the toast.
 
 ## Countdown on the lock screen (iPhone, optional)
 

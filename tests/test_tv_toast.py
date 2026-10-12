@@ -34,3 +34,36 @@ async def test_a_tv_that_is_off_does_not_break_anything(hass, freezer, notify, m
             await advance(hass, freezer, minutes=5)
     assert len(sent(notify["extra"])) == 1
     assert "lg_tv" not in caplog.text  # no warning for a TV that is off
+
+
+async def test_the_toast_repeats_with_the_ring(hass, freezer, notify, make_entry):
+    toasts = async_mock_service(hass, "notify", "lg_tv")
+    await make_entry(type_data("alarm", ring=True), tv_services=["lg_tv"])
+    await hass.services.async_call(DOMAIN, "start", {"type": "alarm"}, blocking=True)
+    for _ in range(2):
+        await advance(hass, freezer, minutes=5)  # 3rd reminder: the TV joins
+    assert len(toasts) == 1
+    await advance(hass, freezer, seconds=12)  # the phone rings again, and so does the TV
+    assert len(toasts) == 2
+    await advance(hass, freezer, seconds=12)
+    assert len(toasts) == 3
+    assert {t.data["message"] for t in toasts} == {"Alarm is still waiting"}
+
+
+async def test_no_repeat_before_the_tv_tier(hass, freezer, notify, make_entry):
+    toasts = async_mock_service(hass, "notify", "lg_tv")
+    await make_entry(type_data("alarm", ring=True), tv_services=["lg_tv"])
+    await hass.services.async_call(DOMAIN, "start", {"type": "alarm"}, blocking=True)
+    await advance(hass, freezer, seconds=12)  # phone-only reminder rings
+    assert toasts == []
+
+
+async def test_a_tv_listed_twice_only_gets_the_toast(hass, freezer, notify, make_entry):
+    """Under 'other devices' it used to show the word clear_notification."""
+    tv = async_mock_service(hass, "notify", "lg_tv")
+    await make_entry(type_data("washer"), extra_services=["lg_tv"], tv_services=["lg_tv"])
+    await hass.services.async_call(DOMAIN, "start", {"type": "washer"}, blocking=True)
+    for _ in range(4):
+        await advance(hass, freezer, minutes=5)
+    assert tv and all(set(c.data) == {"message"} for c in tv)
+    assert all(c.data["message"] != "clear_notification" for c in tv)

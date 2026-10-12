@@ -193,3 +193,21 @@ async def test_a_tv_without_an_area_is_only_turned_off_when_playing(hass, freeze
     await _setup_tvs(hass, make_entry, **{TV: ("paused", None)})  # no area: cannot be matched
     await _run_to_turn_off(hass, freezer)
     assert off == []
+
+
+async def test_tries_again_when_the_tv_was_not_on_at_the_time(hass, freezer, make_entry, caplog):
+    import logging
+
+    off = async_mock_service(hass, "media_player", "turn_off")
+    await make_entry(type_data("washer"), turn_off_players=[TV])
+    hass.states.async_set(TV, "off")
+    await _start(hass)
+    await _to_keeps_going(hass, freezer)
+    with caplog.at_level(logging.INFO):
+        await advance(hass, freezer, minutes=2)  # second keeps-going reminder: TV is off
+    assert off == []
+    assert f"Not turning off {TV}: state off" in caplog.text  # and it says why
+
+    hass.states.async_set(TV, "on")  # the TV was switched on in the meantime
+    await advance(hass, freezer, minutes=2)
+    assert [c.data["entity_id"] for c in off] == [[TV]]

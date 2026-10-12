@@ -310,6 +310,9 @@ class TaskManager:
         )
         if delivered:
             await self._remember_sent(task, tag)
+        if task.extra.get("last_extra"):
+            # The TV shows a toast for a few seconds: repeat it in step with the phone.
+            await self.notifier.async_tv(task.extra.get("last_text") or f"{task.title} is due")
         nxt = now + self._ring_interval(task_type) + self._ring_swap()
         task.ring_at = nxt if nxt < task.ring_until else None
 
@@ -678,6 +681,7 @@ class TaskManager:
         if task_type.ring:
             task.extra["last_text"] = text
             task.extra["last_critical"] = plan.critical
+            task.extra["last_extra"] = plan.extra  # the TV toast repeats with the ring
             task.ring_until = min(now + self._ring_window(), task.next_at)
             first = now + self._ring_interval(task_type)
             task.ring_at = first if first < task.ring_until else None
@@ -791,14 +795,26 @@ class TaskManager:
         return state.state == "playing" or self._area_of(player) == area
 
     async def _turn_off_players(self, task: Task) -> None:
-        """Last step of the ladder: turn the chosen TVs off. Once per task, never while
-        silencing is on (cinema, teaching), and only the ones you are watching."""
-        if "turned_off" in task.extra or self.silence.mode != SILENCE_OFF:
+        """Last step of the ladder: turn the chosen TVs off. Never while silencing is on
+        (cinema, teaching), and only the ones you are watching. Once something was turned off
+        it is done for this task; if nothing qualified, the next reminder tries again."""
+        configured = self.settings.get(CONF_TURN_OFF_PLAYERS, [])
+        if "turned_off" in task.extra or self.silence.mode != SILENCE_OFF or not configured:
             return
-        players = [p for p in self.settings.get(CONF_TURN_OFF_PLAYERS, []) if self._watching(p)]
+        players = [p for p in configured if self._watching(p)]
+        if not players:
+            for player in configured:
+                state = self.hass.states.get(player)
+                _LOGGER.info(
+                    "Not turning off %s: state %s, its area %s, your area %s, silencing off",
+                    player,
+                    state.state if state else "missing",
+                    self._area_of(player),
+                    self.current_area(),
+                )
+            return
         task.extra["turned_off"] = players
-        if players:
-            await self._media_call("turn_off", players)
+        await self._media_call("turn_off", players)
 
     async def _flash_lights(self) -> None:
         """An annoyance of the keeps-going stage: flash the lights of the area you are in (long
