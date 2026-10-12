@@ -24,14 +24,13 @@ Every push has the title **Task Reminder**; the body says what is due ("Washer i
 waiting"). Buttons: **Done** (you did it: finishes the task, starts a chained one, resets a fill flag),
 **Snooze** (while snoozes are left) and **Dismiss** (only for dismissable tasks: ends it *without* doing it).
 On iOS the buttons appear when you long-press or pull down the notification; the Apple Watch shows them directly.
-The icon is always the Home Assistant app icon on iOS. Tapping opens Home Assistant at the page you set in the
-integration settings (`/lovelace/...`), or its default page when empty.
+The icon is always the Home Assistant app icon on iOS. Tapping opens Home Assistant.
 
 ## Where you are: the room presence provider
 
 Choose a **Room presence provider** in the integration settings: an entity whose state is the id of the Home
 Assistant **area** you are in (from your own presence system). Only areas are used; there is nothing else to
-configure. It decides three things:
+configure. It decides two things:
 
 - **Which Alexa speaks first.** The 2nd reminder is announced only by the speakers in your area, from the 3rd
   reminder every speaker is used. Pick your Echo speakers (their Alexa Media Player `media_player` entities) in
@@ -41,10 +40,9 @@ configure. It decides three things:
 - **Which lights flash.** In the keeps-going stage, every reminder flashes the lights of your area (a long flash,
   then back to how they were) as one more annoyance. Never while silencing is active, never for the light ladder,
   and not for the repeats of a ringing reminder.
-- **Whether a TV is worth turning off** (see below): when you are in its area, or when it is playing.
 
 When the provider is not set, unknown or unavailable, or names no area (`none`, `away`, an area that does not
-exist), your place is **unknown**: every speaker announces, no lights flash, and any TV that is on is a candidate.
+exist), your place is **unknown**: every speaker announces, and no lights flash.
 The Tasks panel shows the area you are in, in its header.
 
 ## Notification sound (iPhone)
@@ -126,16 +124,12 @@ reminder reaches the other devices (the 3rd notification); it resumes when the t
 expired), unless you already resumed it yourself. 
 
 As a last resort you can choose media players (your TV) to **turn off**: once the snoozes are used up and the
-second keeps-going reminder is sent, the ones you are watching are turned off, once per task: a TV in the area you
-are in (even paused), or a TV that is playing wherever you are. A TV that is on in an area you are not in and not
-playing is left alone. If your place is unknown, any TV that is on is turned off. Never while silencing
-is active, never for the light ladder, and they are not turned back on afterwards. Dismissable tasks with a fill flag that is off use a lighter
-ladder (phone and Alexa only) and never pause media. If no notify service is configured, a Repairs warning says so.
-
-Snoozes are limited (default 10, 5, 3 minutes); after the last one the Snooze
-button disappears. Quiet hours hold non time-critical reminders, being away
-holds everything after one passive notification, and silencing (with a required
-end time) either drops critical alerts or holds everything.
+second keeps-going reminder is sent, the ones that are on are turned off, once per task, whether they are playing,
+paused or idle. Players that are off are left alone (the log says so), and the next reminder tries again. Where you
+are does not matter. Use the player that really switches the TV (the Apple TV; an LG that follows it needs no entry
+here). Never while silencing is active, never for the light ladder, and they are not turned back on afterwards.
+Dismissable tasks with a fill flag that is off use a lighter ladder (phone and Alexa only) and never pause media.
+If no notify service is configured, a Repairs warning says so.
 
 ## Task type options
 

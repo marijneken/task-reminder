@@ -9,7 +9,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.task_reminder.const import DOMAIN, SUBENTRY_TYPE
 
-from .conftest import advance, type_data
+from .conftest import advance, hub_form, type_data
 
 HUB = {
     "person": "person.marijn",
@@ -24,7 +24,7 @@ HUB = {
 async def test_hub_flow_and_single_instance(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     assert result["type"] is FlowResultType.FORM
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], HUB)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], hub_form(**HUB))
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"]["phone_services"] == ["mobile_app_phone"]
 
@@ -37,7 +37,7 @@ async def test_options_flow_changes_settings(hass: HomeAssistant, make_entry) ->
     entry = await make_entry()
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {**HUB, "quiet_start": "22:00:00"}
+        result["flow_id"], hub_form(**{**HUB, "quiet_start": "22:00:00"})
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
@@ -157,3 +157,77 @@ async def test_entities(hass: HomeAssistant, freezer, make_entry) -> None:
     # Silence expires on its own.
     await advance(hass, freezer, hours=7)
     assert hass.states.get(ids["select"]).state == "off"
+
+
+async def test_the_hub_form_is_grouped_in_sections(hass: HomeAssistant) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    keys = [str(key) for key in result["data_schema"].schema]
+    assert keys == [
+        "person",
+        "live_activities",
+        "notifications",
+        "sound_ringing",
+        "quiet_hours",
+        "pause_players",
+        "turn_off_players",
+        "room_provider",
+    ]
+    inner = {
+        name: [str(k) for k in result["data_schema"].schema[name].schema.schema]
+        for name in ("notifications", "sound_ringing", "quiet_hours")
+    }
+    assert inner["notifications"] == [
+        "phone_services",
+        "extra_services",
+        "tv_services",
+        "alexa_speakers",
+    ]
+    assert inner["sound_ringing"] == [
+        "notification_sound",
+        "ring_seconds",
+        "ring_swap_seconds",
+        "ring_minutes",
+    ]
+    assert inner["quiet_hours"] == ["quiet_start", "quiet_end"]
+
+
+async def test_the_options_form_shows_the_stored_values(hass: HomeAssistant, make_entry) -> None:
+    entry = await make_entry(room_provider="sensor.room", ring_seconds=20)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    schema = result["data_schema"].schema
+    assert {str(k): k.description for k in schema}["room_provider"] == {
+        "suggested_value": "sensor.room"
+    }
+    inner = next(v for k, v in schema.items() if str(k) == "sound_ringing").schema.schema
+    assert {str(k): k.description for k in inner}["ring_seconds"] == {"suggested_value": 20}
+
+
+async def test_clearing_a_setting_in_the_options_really_clears_it(hass, make_entry) -> None:
+    entry = await make_entry(room_provider="sensor.room", notification_sound="alarm.caf")
+    assert entry.runtime_data.settings["room_provider"] == "sensor.room"
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        hub_form(**HUB),  # room provider and sound left empty
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert not entry.runtime_data.settings.get("room_provider")
+    assert not entry.runtime_data.settings.get("notification_sound")
+
+
+async def test_the_hub_form_can_be_sent_to_the_frontend(hass: HomeAssistant) -> None:
+    import voluptuous_serialize
+    from homeassistant.helpers import config_validation as cv
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    fields = voluptuous_serialize.convert(
+        result["data_schema"], custom_serializer=cv.custom_serializer
+    )
+    sections = {f["name"]: f for f in fields if f.get("type") == "expandable"}
+    assert set(sections) == {"notifications", "sound_ringing", "quiet_hours"}
+    assert [f["name"] for f in sections["sound_ringing"]["schema"]][:3] == [
+        "notification_sound",
+        "ring_seconds",
+        "ring_swap_seconds",
+    ]

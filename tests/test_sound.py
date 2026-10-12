@@ -2,7 +2,7 @@
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, sent, type_data
+from .conftest import advance, hub_form, sent, type_data
 
 
 async def _start(hass, type_):
@@ -75,15 +75,11 @@ async def test_hub_flow_accepts_a_chosen_and_a_typed_sound(hass):
         result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {
-                "person": "person.marijn",
-                "phone_services": ["mobile_app_phone"],
-                "alexa_speakers": [],
-                "extra_services": [],
-                "quiet_start": "23:00:00",
-                "quiet_end": "07:00:00",
-                "notification_sound": sound,
-            },
+            hub_form(
+                person="person.marijn",
+                phone_services=["mobile_app_phone"],
+                notification_sound=sound,
+            ),
         )
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["data"]["notification_sound"] == sound

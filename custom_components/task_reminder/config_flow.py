@@ -14,6 +14,7 @@ from homeassistant.config_entries import (
     SubentryFlowResult,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 from homeassistant.util import slugify
 
@@ -60,7 +61,6 @@ from .const import (
     CONF_START_ENTITY,
     CONF_START_STATE,
     CONF_START_TAG,
-    CONF_TAP_URL,
     CONF_THEN_START,
     CONF_TIME_CRITICAL,
     CONF_TURN_OFF_PLAYERS,
@@ -120,38 +120,110 @@ def _notify_selector(hass: HomeAssistant) -> selector.SelectSelector:
     )
 
 
+# The hub form groups its fields in sections; what is stored stays one flat dict.
+_SECTION_FIELDS: dict[str, tuple[str, ...]] = {
+    "notifications": (
+        CONF_PHONE_SERVICES,
+        CONF_EXTRA_SERVICES,
+        CONF_TV_SERVICES,
+        CONF_ALEXA_SPEAKERS,
+    ),
+    "sound_ringing": (
+        CONF_NOTIFICATION_SOUND,
+        CONF_RING_SECONDS,
+        CONF_RING_SWAP_SECONDS,
+        CONF_RING_MINUTES,
+    ),
+    "quiet_hours": (CONF_QUIET_START, CONF_QUIET_END),
+}
+_HUB_KEYS = (
+    CONF_PERSON,
+    CONF_LIVE_ACTIVITIES,
+    *(key for fields in _SECTION_FIELDS.values() for key in fields),
+    CONF_PAUSE_PLAYERS,
+    CONF_TURN_OFF_PLAYERS,
+    CONF_ROOM_PROVIDER,
+)
+
+
+def _flatten(user_input: dict[str, Any]) -> dict[str, Any]:
+    """The submitted form (with sections) as one flat dict."""
+    flat: dict[str, Any] = {}
+    for key, value in user_input.items():
+        if key in _SECTION_FIELDS:
+            flat.update(value)
+        else:
+            flat[key] = value
+    return flat
+
+
+def _nest(flat: dict[str, Any]) -> dict[str, Any]:
+    """Stored settings in the shape of the form, to prefill it."""
+    nested = {k: v for k, v in flat.items() if not any(k in f for f in _SECTION_FIELDS.values())}
+    for name, fields in _SECTION_FIELDS.items():
+        nested[name] = {k: flat[k] for k in fields if flat.get(k) is not None}
+    return nested
+
+
 def _hub_schema(hass: HomeAssistant) -> vol.Schema:
     notify = _notify_selector(hass)
+    players = selector.EntitySelector(
+        selector.EntitySelectorConfig(domain="media_player", multiple=True)
+    )
     return vol.Schema(
         {
             vol.Required(CONF_PERSON): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="person")
             ),
-            vol.Optional(CONF_PHONE_SERVICES, default=[]): notify,
-            vol.Optional(CONF_ALEXA_SPEAKERS, default=[]): selector.EntitySelector(
-                selector.EntitySelectorConfig(
-                    domain="media_player", integration="alexa_media", multiple=True
-                )
-            ),
-            vol.Optional(CONF_EXTRA_SERVICES, default=[]): notify,
-            vol.Optional(CONF_TV_SERVICES, default=[]): notify,
-            vol.Optional(CONF_PAUSE_PLAYERS, default=[]): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="media_player", multiple=True)
-            ),
-            vol.Optional(CONF_TAP_URL): selector.TextSelector(),
             vol.Optional(CONF_LIVE_ACTIVITIES, default=False): selector.BooleanSelector(),
-            vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
-            vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(5, 120, "s"),
-            vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(1, 30, "min"),
-            vol.Optional(CONF_RING_SWAP_SECONDS, default=DEFAULT_RING_SWAP_SECONDS): _number(
-                0, 10, "s", step=0.1
+            vol.Required("notifications"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(CONF_PHONE_SERVICES, default=[]): notify,
+                        vol.Optional(CONF_EXTRA_SERVICES, default=[]): notify,
+                        vol.Optional(CONF_TV_SERVICES, default=[]): notify,
+                        vol.Optional(CONF_ALEXA_SPEAKERS, default=[]): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                domain="media_player", integration="alexa_media", multiple=True
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": False},
             ),
+            vol.Required("sound_ringing"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(CONF_NOTIFICATION_SOUND): _sound_selector(),
+                        vol.Optional(CONF_RING_SECONDS, default=DEFAULT_RING_SECONDS): _number(
+                            5, 120, "s"
+                        ),
+                        vol.Optional(
+                            CONF_RING_SWAP_SECONDS, default=DEFAULT_RING_SWAP_SECONDS
+                        ): _number(0, 10, "s", step=0.1),
+                        vol.Optional(CONF_RING_MINUTES, default=DEFAULT_RING_MINUTES): _number(
+                            1, 30, "min"
+                        ),
+                    }
+                ),
+                {"collapsed": False},
+            ),
+            vol.Required("quiet_hours"): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_QUIET_START, default=DEFAULT_QUIET_START
+                        ): selector.TimeSelector(),
+                        vol.Required(
+                            CONF_QUIET_END, default=DEFAULT_QUIET_END
+                        ): selector.TimeSelector(),
+                    }
+                ),
+                {"collapsed": False},
+            ),
+            vol.Optional(CONF_PAUSE_PLAYERS, default=[]): players,
+            vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): players,
             vol.Optional(CONF_ROOM_PROVIDER): selector.EntitySelector(),
-            vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="media_player", multiple=True)
-            ),
-            vol.Required(CONF_QUIET_START, default=DEFAULT_QUIET_START): selector.TimeSelector(),
-            vol.Required(CONF_QUIET_END, default=DEFAULT_QUIET_END): selector.TimeSelector(),
         }
     )
 
@@ -164,7 +236,7 @@ class TaskReminderConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Hub settings."""
         if user_input is not None:
-            return self.async_create_entry(title="Task Reminder", data=user_input)
+            return self.async_create_entry(title="Task Reminder", data=_flatten(user_input))
         return self.async_show_form(step_id="user", data_schema=_hub_schema(self.hass))
 
     @staticmethod
@@ -188,11 +260,14 @@ class TaskReminderOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Hub settings."""
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            settings = _flatten(user_input)
+            # A field left empty is absent from the form: say so, or the value from the first
+            # setup (entry data) would shine through again.
+            return self.async_create_entry(data={**dict.fromkeys(_HUB_KEYS), **settings})
         current = {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
             step_id="init",
-            data_schema=self.add_suggested_values_to_schema(_hub_schema(self.hass), current),
+            data_schema=self.add_suggested_values_to_schema(_hub_schema(self.hass), _nest(current)),
         )
 
 

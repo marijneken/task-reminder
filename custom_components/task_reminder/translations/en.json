@@ -3,38 +3,64 @@
     "step": {
       "user": {
         "title": "Task Reminder",
-        "description": "Which notify services reach you. Phone services get the reminder first; Alexa joins from the second reminder, other devices from the third.",
+        "description": "Choose your person, then who gets reminders and how.",
         "data": {
           "person": "Person",
-          "phone_services": "Phone notify services",
-          "alexa_speakers": "Alexa speakers",
-          "extra_services": "Other devices notify services",
-          "tv_services": "TV notify services (toast)",
-          "quiet_start": "Quiet hours start",
-          "quiet_end": "Quiet hours end",
-          "pause_players": "Pause these media players",
-          "tap_url": "Open this page when a reminder is tapped",
           "live_activities": "Countdown on the lock screen (iPhone)",
-          "notification_sound": "Notification sound (iPhone)",
+          "pause_players": "Pause these media players",
           "turn_off_players": "Turn these off as a last resort",
-          "ring_seconds": "Ring interval (seconds)",
-          "ring_minutes": "Ring for at most (minutes)",
-          "ring_swap_seconds": "Extra time per repeat (seconds)",
           "room_provider": "Room presence provider"
         },
         "data_description": {
-          "tv_services": "Notify services of a TV, e.g. the LG webOS one. From the third reminder on (with the other devices) the TV shows a short toast with the same text, and shows it again whenever a ringing reminder repeats. Put the TV here and not under Other devices: a TV cannot show buttons, and it would show the word clear_notification. A TV that is off is simply skipped.",
-          "quiet_start": "Non time-critical reminders wait until the quiet hours end. Same start and end turns quiet hours off.",
-          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
           "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
-          "tap_url": "Optional dashboard path such as /lovelace/reminders. Empty opens Home Assistant at its default page.",
-          "notification_sound": "Pick a sound, or type the exact file name of one you imported in the Companion app (with extension). iOS system sounds (.caf) must first be imported once: in the app, Settings, Companion App, Notifications, Sounds, System tab, Import system sounds, then restart the phone. Empty uses the default sound. Critical alerts use it too.",
-          "turn_off_players": "Typically your TV. When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if still on. Never while silencing is active.",
-          "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
-          "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again.",
-          "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
-          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area), which lights flash when a reminder keeps going (the lights of that area), and whether the TV is worth turning off (you are in its area, or it is playing). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces, no lights flash, and any TV that is on is turned off.",
-          "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters."
+          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
+          "turn_off_players": "Typically your TV (the Apple TV; a TV that follows it, like the LG, turns off with it). When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if they are on, whether playing, paused or idle. Never while silencing is active.",
+          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area) and which lights flash when a reminder keeps going (the lights of that area). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces and no lights flash."
+        },
+        "sections": {
+          "notifications": {
+            "name": "Notifications",
+            "description": "Who gets a reminder, in the order they join: the phone first, Alexa from the second reminder, other devices and the TV from the third.",
+            "data": {
+              "phone_services": "Phone notify services",
+              "extra_services": "Other devices notify services",
+              "tv_services": "TV notify services (toast)",
+              "alexa_speakers": "Alexa speakers"
+            },
+            "data_description": {
+              "phone_services": "Notify services of your phone. It gets every reminder from the first, with the Done, Snooze and Dismiss buttons, a critical alert once a reminder keeps going, and it is the only device that rings.",
+              "extra_services": "Notify services of other Companion app devices, like an iPad or a Mac. They get the same notification as the phone, but only from the third reminder on, with the other devices. Not a TV: a TV cannot show buttons, so put it under TV notify services.",
+              "tv_services": "Notify services of a TV, e.g. the LG webOS one. From the third reminder on (with the other devices) the TV shows a short toast with the same text, and shows it again whenever a ringing reminder repeats. Put the TV here and not under Other devices: a TV cannot show buttons, and it would show the word clear_notification. A TV that is off is simply skipped.",
+              "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters."
+            }
+          },
+          "sound_ringing": {
+            "name": "Sound & Ringing",
+            "description": "The sound of a reminder on the iPhone, and how a ringing reminder repeats it.",
+            "data": {
+              "notification_sound": "Notification sound (iPhone)",
+              "ring_seconds": "Ring interval (seconds)",
+              "ring_swap_seconds": "Extra delay for repeated ring interval (seconds)",
+              "ring_minutes": "Ring for at most (minutes)"
+            },
+            "data_description": {
+              "notification_sound": "Pick a sound, or type the exact file name of one you imported in the Companion app (with extension). iOS system sounds (.caf) must first be imported once: in the app, Settings, Companion App, Notifications, Sounds, System tab, Import system sounds, then restart the phone. Empty uses the default sound. Critical alerts use it too.",
+              "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
+              "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
+              "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again."
+            }
+          },
+          "quiet_hours": {
+            "name": "Quiet hours",
+            "description": "Reminders that are not time-critical wait until the quiet hours end.",
+            "data": {
+              "quiet_start": "Quiet hours start",
+              "quiet_end": "Quiet hours end"
+            },
+            "data_description": {
+              "quiet_start": "Same start and end turns quiet hours off."
+            }
+          }
         }
       }
     },
@@ -46,23 +72,64 @@
     "step": {
       "init": {
         "title": "Task Reminder",
+        "description": "Choose your person, then who gets reminders and how.",
         "data": {
           "person": "Person",
-          "phone_services": "Phone notify services",
-          "alexa_speakers": "Alexa speakers",
-          "extra_services": "Other devices notify services",
-          "tv_services": "TV notify services (toast)",
-          "quiet_start": "Quiet hours start",
-          "quiet_end": "Quiet hours end",
-          "pause_players": "Pause these media players",
-          "tap_url": "Open this page when a reminder is tapped",
           "live_activities": "Countdown on the lock screen (iPhone)",
-          "notification_sound": "Notification sound (iPhone)",
+          "pause_players": "Pause these media players",
           "turn_off_players": "Turn these off as a last resort",
-          "ring_seconds": "Ring interval (seconds)",
-          "ring_minutes": "Ring for at most (minutes)",
-          "ring_swap_seconds": "Extra time per repeat (seconds)",
           "room_provider": "Room presence provider"
+        },
+        "data_description": {
+          "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
+          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
+          "turn_off_players": "Typically your TV (the Apple TV; a TV that follows it, like the LG, turns off with it). When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if they are on, whether playing, paused or idle. Never while silencing is active.",
+          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area) and which lights flash when a reminder keeps going (the lights of that area). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces and no lights flash."
+        },
+        "sections": {
+          "notifications": {
+            "name": "Notifications",
+            "description": "Who gets a reminder, in the order they join: the phone first, Alexa from the second reminder, other devices and the TV from the third.",
+            "data": {
+              "phone_services": "Phone notify services",
+              "extra_services": "Other devices notify services",
+              "tv_services": "TV notify services (toast)",
+              "alexa_speakers": "Alexa speakers"
+            },
+            "data_description": {
+              "phone_services": "Notify services of your phone. It gets every reminder from the first, with the Done, Snooze and Dismiss buttons, a critical alert once a reminder keeps going, and it is the only device that rings.",
+              "extra_services": "Notify services of other Companion app devices, like an iPad or a Mac. They get the same notification as the phone, but only from the third reminder on, with the other devices. Not a TV: a TV cannot show buttons, so put it under TV notify services.",
+              "tv_services": "Notify services of a TV, e.g. the LG webOS one. From the third reminder on (with the other devices) the TV shows a short toast with the same text, and shows it again whenever a ringing reminder repeats. Put the TV here and not under Other devices: a TV cannot show buttons, and it would show the word clear_notification. A TV that is off is simply skipped.",
+              "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters."
+            }
+          },
+          "sound_ringing": {
+            "name": "Sound & Ringing",
+            "description": "The sound of a reminder on the iPhone, and how a ringing reminder repeats it.",
+            "data": {
+              "notification_sound": "Notification sound (iPhone)",
+              "ring_seconds": "Ring interval (seconds)",
+              "ring_swap_seconds": "Extra delay for repeated ring interval (seconds)",
+              "ring_minutes": "Ring for at most (minutes)"
+            },
+            "data_description": {
+              "notification_sound": "Pick a sound, or type the exact file name of one you imported in the Companion app (with extension). iOS system sounds (.caf) must first be imported once: in the app, Settings, Companion App, Notifications, Sounds, System tab, Import system sounds, then restart the phone. Empty uses the default sound. Critical alerts use it too.",
+              "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
+              "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
+              "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again."
+            }
+          },
+          "quiet_hours": {
+            "name": "Quiet hours",
+            "description": "Reminders that are not time-critical wait until the quiet hours end.",
+            "data": {
+              "quiet_start": "Quiet hours start",
+              "quiet_end": "Quiet hours end"
+            },
+            "data_description": {
+              "quiet_start": "Same start and end turns quiet hours off."
+            }
+          }
         }
       }
     }

@@ -40,7 +40,6 @@ class Notifier:
         phone: list[str],
         alexa: list[str],  # media_player entity ids of the Echo speakers
         extra: list[str],
-        tap_url: str | None = None,
         tv: list[str] | None = None,  # TV notify services (webOS toasts), plain text
     ) -> None:
         self.hass = hass
@@ -50,7 +49,6 @@ class Notifier:
         self.phone = phone
         self.alexa = alexa
         self.extra = extra
-        self.tap_url = tap_url or None
         # Called for every push that counts against the Companion app's daily limit.
         self.on_push: Callable[[], None] | None = None
 
@@ -82,10 +80,6 @@ class Notifier:
     async def _send_all(self, calls: list[tuple[str, dict[str, Any]]]) -> int:
         results = await asyncio.gather(*(self._call(s, p) for s, p in calls))
         return sum(results)
-
-    def _tap(self) -> dict[str, str]:
-        """Where tapping the notification goes: iOS reads `url`, Android `clickAction`."""
-        return {"url": self.tap_url, "clickAction": self.tap_url} if self.tap_url else {}
 
     @staticmethod
     def _actions(task_id: str, can_snooze: bool, dismissable: bool) -> list[dict]:
@@ -122,7 +116,6 @@ class Notifier:
             "tag": tag or tag_for(task_id),
             "group": GROUP,
             "actions": self._actions(task_id, can_snooze, dismissable),
-            **self._tap(),
         }
         push: dict[str, Any] = {}
         if plan.critical:
@@ -173,7 +166,6 @@ class Notifier:
             "live_update": True,
             "chronometer": True,
             "when": int(when.timestamp()),
-            **self._tap(),
         }
         return await self._send_all(
             [(s, {"title": title, "message": message, "data": dict(data)}) for s in self.phone]
@@ -186,7 +178,6 @@ class Notifier:
             "group": GROUP,
             "actions": self._actions(task_id, False, False),
             "push": {"interruption-level": "passive"},
-            **self._tap(),
         }
         return await self._send_all(
             [

@@ -19,7 +19,6 @@ CONF_EXTRA_SERVICES = "extra_services"
 CONF_TV_SERVICES = "tv_services"
 CONF_PAUSE_PLAYERS = "pause_players"
 CONF_TURN_OFF_PLAYERS = "turn_off_players"
-CONF_TAP_URL = "tap_url"
 CONF_RING = "ring"  # per task type: keep re-triggering the sound until answered
 CONF_RING_SECONDS = "ring_seconds"  # hub default and per task type override
 CONF_RING_MINUTES = "ring_minutes"  # how long one reminder keeps ringing at most

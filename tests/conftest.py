@@ -143,3 +143,26 @@ async def advance(hass: HomeAssistant, freezer, **delta: float) -> None:
     freezer.tick(timedelta(**delta))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
+
+
+def hub_form(**fields: Any) -> dict[str, Any]:
+    """Hub settings the way the form submits them: grouped in sections (what is stored is flat)."""
+    sections = {
+        "notifications": ("phone_services", "extra_services", "tv_services", "alexa_speakers"),
+        "sound_ringing": (
+            "notification_sound",
+            "ring_seconds",
+            "ring_swap_seconds",
+            "ring_minutes",
+        ),
+        "quiet_hours": ("quiet_start", "quiet_end"),
+    }
+    form: dict[str, Any] = {name: {} for name in sections}
+    for key, value in fields.items():
+        for name, keys in sections.items():
+            if key in keys:
+                form[name][key] = value
+                break
+        else:
+            form[key] = value
+    return form

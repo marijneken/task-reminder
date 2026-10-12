@@ -51,7 +51,6 @@ from .const import (
     CONF_RING_SECONDS,
     CONF_RING_SWAP_SECONDS,
     CONF_ROOM_PROVIDER,
-    CONF_TAP_URL,
     CONF_TURN_OFF_PLAYERS,
     CONF_TV_SERVICES,
     DEFAULT_QUIET_END,
@@ -135,7 +134,6 @@ class TaskManager:
             list(s.get(CONF_PHONE_SERVICES, [])),
             list(s.get(CONF_ALEXA_SPEAKERS, [])),
             list(s.get(CONF_EXTRA_SERVICES, [])),
-            s.get(CONF_TAP_URL),
             list(s.get(CONF_TV_SERVICES, [])),
         )
 
@@ -782,35 +780,24 @@ class TaskManager:
         if players:
             await self._media_call("media_pause", players)
 
-    def _watching(self, player: str) -> bool:
-        """Is a TV worth turning off? When we know where you are: if you are in the TV's area,
-        or it is playing (a playing TV is a good sign you are watching, wherever you are).
-        When we do not know where you are: any TV that is on."""
+    def _is_on(self, player: str) -> bool:
+        """A player that is on, whatever it is doing: a paused or idle TV still needs turning off."""
         state = self.hass.states.get(player)
-        if state is None or state.state in ("off", "unavailable", "unknown"):
-            return False
-        area = self.current_area()
-        if area is None:
-            return True
-        return state.state == "playing" or self._area_of(player) == area
+        return state is not None and state.state not in ("off", "standby", "unavailable", "unknown")
 
     async def _turn_off_players(self, task: Task) -> None:
-        """Last step of the ladder: turn the chosen TVs off. Never while silencing is on
-        (cinema, teaching), and only the ones you are watching. Once something was turned off
-        it is done for this task; if nothing qualified, the next reminder tries again."""
+        """Last step of the ladder: turn the chosen players off when they are on (playing,
+        paused or idle). Never while silencing is on (cinema, teaching). Once something was
+        turned off it is done for this task; if nothing was on, the next reminder tries again."""
         configured = self.settings.get(CONF_TURN_OFF_PLAYERS, [])
         if "turned_off" in task.extra or self.silence.mode != SILENCE_OFF or not configured:
             return
-        players = [p for p in configured if self._watching(p)]
+        players = [p for p in configured if self._is_on(p)]
         if not players:
             for player in configured:
                 state = self.hass.states.get(player)
                 _LOGGER.info(
-                    "Not turning off %s: state %s, its area %s, your area %s, silencing off",
-                    player,
-                    state.state if state else "missing",
-                    self._area_of(player),
-                    self.current_area(),
+                    "Not turning off %s: it is %s", player, state.state if state else "missing"
                 )
             return
         task.extra["turned_off"] = players

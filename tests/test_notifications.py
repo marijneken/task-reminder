@@ -37,18 +37,3 @@ async def test_away_notification_and_summary_use_the_same_title(hass, freezer, n
     await _start(hass, "washer")
     assert notify["phone"][0].data["title"] == "Task Reminder"
     assert notify["phone"][0].data["message"] == "Washer is due (you're away)"
-
-
-async def test_tap_target_is_only_set_when_configured(hass, notify, make_entry):
-    await make_entry(type_data("washer"), tap_url="/lovelace/reminders")
-    await _start(hass, "washer")
-    data = notify["phone"][0].data["data"]
-    assert data["url"] == "/lovelace/reminders"  # iOS
-    assert data["clickAction"] == "/lovelace/reminders"  # Android
-
-
-async def test_no_tap_target_by_default(hass, notify, make_entry):
-    await make_entry(type_data("washer"))
-    await _start(hass, "washer")
-    data = notify["phone"][0].data["data"]
-    assert "url" not in data and "clickAction" not in data

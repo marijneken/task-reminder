@@ -5,7 +5,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.task_reminder.const import DOMAIN
 
-from .conftest import advance, make_area, place_entity, type_data
+from .conftest import advance, hub_form, make_area, place_entity, type_data
 
 PROVIDER = "sensor.room_presence"
 LIVING, OFFICE = "media_player.echo_living_room", "media_player.echo_office"
@@ -217,15 +217,9 @@ async def test_the_hub_flow_accepts_a_room_provider(hass):
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            "person": "person.marijn",
-            "phone_services": ["mobile_app_phone"],
-            "alexa_speakers": [],
-            "extra_services": [],
-            "quiet_start": "23:00:00",
-            "quiet_end": "07:00:00",
-            "room_provider": PROVIDER,
-        },
+        hub_form(
+            person="person.marijn", phone_services=["mobile_app_phone"], room_provider=PROVIDER
+        ),
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"]["room_provider"] == PROVIDER
