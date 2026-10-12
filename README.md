@@ -101,14 +101,20 @@ listed in both only gets the toast.
 ## Countdown on the lock screen (iPhone, optional)
 
 Switch on **Countdown on the lock screen** in the settings and a timer (`remind` with a delay), or a task
-that is waiting for its due time or for a snooze to end, shows an iOS Live Activity on the lock screen
-(and in the Dynamic Island, as far as the Companion app uses it) that counts down to the next reminder.
-The phone counts by itself, so one push starts it. It starts when the due time is less than 7 hours away
-(iOS ends activities after 8), is updated when you snooze, and ends when the reminder arrives or the task is
-done, dismissed or cancelled. Not during silencing, quiet hours (except time-critical reminders) or while
-away. Needs the Companion app and Home Assistant versions the
-[Companion docs](https://companion.home-assistant.io/docs/notifications/live-activities/) name; with an older
-app the push shows as a plain notification, so try it first. Phones only.
+that is waiting for its due time or for a snooze to end, shows an iOS Live Activity on the lock screen and in
+the Dynamic Island that counts down to the next reminder. The phone counts by itself, so one push starts it.
+
+- It is titled "Task Reminder: <name>", carries a bell-with-a-check icon in the logo's orange (the Companion app
+  only takes a Material Design icon name, not an image) and its bar fills up towards the moment while the time
+  counts down. Tapping it opens the Tasks panel.
+- With several running, iOS shows one in the Dynamic Island and lists the others on the lock screen. The one that
+  comes first gets the island (`relevance_score`); the others are told quietly when the order changes. You cannot
+  switch between them yourself: that is up to iOS.
+- It starts when the due time is less than 7 hours away (iOS ends activities after 8), is updated silently when
+  you snooze, and ends when the reminder arrives or the task is done, dismissed or cancelled. Not during
+  silencing, quiet hours (except time-critical reminders) or while away.
+- Needs the Companion app and Home Assistant versions the
+  [Companion docs](https://companion.home-assistant.io/docs/notifications/live-activities/) name. Phones only.
 
 ## How it escalates
 

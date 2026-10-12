@@ -147,6 +147,11 @@ STORAGE_KEY = DOMAIN
 
 # Every push notification carries this title; the body says what is due.
 NOTIFICATION_TITLE = "Task Reminder"
+PANEL_URL = "tasks"  # the sidebar panel: /tasks
+# The Live Activity icon is a Material Design Icons slug (the app takes no image): the closest to
+# our logo, a bell with a check, in the logo's orange.
+LIVE_ICON = "mdi:bell-check"
+LIVE_ICON_COLOR = "#FF7A30"
 
 SIGNAL_UPDATE = f"{DOMAIN}_update"
 

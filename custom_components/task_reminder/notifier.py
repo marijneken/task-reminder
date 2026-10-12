@@ -15,7 +15,10 @@ from .const import (
     ACTION_DONE,
     ACTION_PREFIX,
     ACTION_SNOOZE,
+    LIVE_ICON,
+    LIVE_ICON_COLOR,
     NOTIFICATION_TITLE,
+    PANEL_URL,
 )
 from .policy import ChannelPlan
 
@@ -158,17 +161,49 @@ class Notifier:
         it is sent again rather than removed."""
         await self._send_all([(s, {"message": message}) for s in self.tv])
 
-    async def async_live(self, *, tag: str, title: str, message: str, when: datetime) -> int:
+    async def async_live(
+        self,
+        *,
+        tag: str,
+        title: str,
+        message: str,
+        when: datetime,
+        score: float,
+        update: bool,
+    ) -> int:
         """Show (or update, same tag) an iOS Live Activity that counts down to `when`. The phone
-        counts by itself, so one push is enough. Phones only."""
+        counts by itself, so one push is enough. Phones only.
+
+        The icon (left in the Dynamic Island) is a Material Design Icons slug, the bar fills up
+        towards the moment instead of draining, a tap opens the Tasks panel, and `score` decides
+        which of several activities takes the Dynamic Island. An update is silent (no sound,
+        lower priority); only the push that starts an activity may make a sound.
+        """
         data: dict[str, Any] = {
             "tag": tag,
             "live_update": True,
             "chronometer": True,
             "when": int(when.timestamp()),
+            "progress_bar_direction": "increasing",
+            "notification_icon": LIVE_ICON,
+            "notification_icon_color": LIVE_ICON_COLOR,
+            "relevance_score": score,
+            "url": f"/{PANEL_URL}",
         }
+        if update:
+            data["silent"] = True
         return await self._send_all(
-            [(s, {"title": title, "message": message, "data": dict(data)}) for s in self.phone]
+            [
+                (
+                    s,
+                    {
+                        "title": f"{NOTIFICATION_TITLE}: {title}",
+                        "message": message,
+                        "data": dict(data),
+                    },
+                )
+                for s in self.phone
+            ]
         )
 
     async def async_quiet(self, *, task_id: str, message: str) -> int:

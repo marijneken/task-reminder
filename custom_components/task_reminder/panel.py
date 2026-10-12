@@ -20,6 +20,7 @@ from .const import (
     ADHOC_KEY,
     ATTR_SORT_DATE,
     DOMAIN,
+    PANEL_URL,
     SIGNAL_UPDATE,
     SILENCE_MODES,
 )
@@ -30,7 +31,6 @@ from .policy import keeps_going, snooze_for
 _LOGGER = logging.getLogger(__name__)
 
 URL_BASE = "/task_reminder_static"
-PANEL_URL = "tasks"
 PANEL_FILE = "task-reminder-panel.js"
 
 

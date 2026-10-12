@@ -242,6 +242,7 @@ class TaskManager:
         """Remove everything this task has on the phones (its notifications and the away note)."""
         tags = [tag_for(task.id), *task.tags]
         if task.extra.pop("live", None):
+            task.extra.pop("live_score", None)
             tags.append(self._live_tag(task))
         task.tags = []
         await self.notifier.async_clear_tags(tags)
@@ -510,23 +511,33 @@ class TaskManager:
 
     async def _sync_live(self) -> None:
         now = dt_util.utcnow()
+        wanted = {t.id: tgt for t in self.tasks.values() if (tgt := self._live_target(t, now))}
+        # iOS gives the Dynamic Island to the highest score: the one that comes first.
+        order = sorted(wanted, key=lambda task_id: wanted[task_id])
         for task in list(self.tasks.values()):
             shown = task.extra.get("live")
-            target = self._live_target(task, now)
+            target = wanted.get(task.id)
             if target is None:
                 if shown:
                     task.extra.pop("live", None)
+                    task.extra.pop("live_score", None)
                     await self.notifier.async_clear_tags([self._live_tag(task)])
-            elif shown != target.isoformat():
-                at = dt_util.as_local(target).strftime("%H:%M")
-                verb = "Reminder" if task.status is TaskStatus.SNOOZED else "Due"
-                if await self.notifier.async_live(
-                    tag=self._live_tag(task),
-                    title=task.title,
-                    message=f"{verb} at {at}",
-                    when=target,
-                ):
-                    task.extra["live"] = target.isoformat()
+                continue
+            score = round(max(0.1, 1.0 - 0.1 * order.index(task.id)), 1)
+            if shown == target.isoformat() and task.extra.get("live_score") == score:
+                continue
+            at = dt_util.as_local(target).strftime("%H:%M")
+            verb = "Reminder" if task.status is TaskStatus.SNOOZED else "Due"
+            if await self.notifier.async_live(
+                tag=self._live_tag(task),
+                title=task.title,
+                message=f"{verb} at {at}",
+                when=target,
+                score=score,
+                update=bool(shown),
+            ):
+                task.extra["live"] = target.isoformat()
+                task.extra["live_score"] = score
 
     def _schedule(self) -> None:
         if self._unsub_timer:
