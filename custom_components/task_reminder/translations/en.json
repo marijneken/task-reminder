@@ -174,7 +174,8 @@
             "good_moment_entities": "Good moments (speak up early)",
             "sound": "Notification sound for this task type",
             "ring": "Ring until answered",
-            "ring_seconds": "Ring interval for this task (seconds)"
+            "ring_seconds": "Ring interval for this task (seconds)",
+            "live_icon": "Countdown icon"
           },
           "data_description": {
             "dismissable": "Can be ended without doing it (e.g. the bin is not full). Otherwise only completing it ends it.",
@@ -193,7 +194,8 @@
             "good_moment_entities": "Binary sensors (e.g. stairwell motion). While a reminder is unanswered, one of them turning on brings the next reminder forward.",
             "sound": "Overrides the sound set in the integration settings, for example a different one for the washer. Same choices; system sounds need the one-time import in the Companion app.",
             "ring": "Keeps triggering the sound on the phone until you snooze, complete or dismiss it, like an alarm. Each trigger is a new notification and the previous one is removed right after it. When the reminder is a critical alert (the keeps-going stage), the triggers are critical alerts too, and those may pile up in the notification list.",
-            "ring_seconds": "Empty uses the interval from the integration settings. Set it to about the length of this task's sound."
+            "ring_seconds": "Empty uses the interval from the integration settings. Set it to about the length of this task's sound.",
+            "live_icon": "Optional. The icon of this task type's countdown on the lock screen and in the Dynamic Island, e.g. mdi:washing-machine or mdi:delete. It is what tells several countdowns apart in the island. Only Material Design icons (mdi:) work. Empty uses the Task Reminder icon."
           }
         },
         "reconfigure": {
@@ -228,7 +230,8 @@
             "good_moment_entities": "Good moments (speak up early)",
             "sound": "Notification sound for this task type",
             "ring": "Ring until answered",
-            "ring_seconds": "Ring interval for this task (seconds)"
+            "ring_seconds": "Ring interval for this task (seconds)",
+            "live_icon": "Countdown icon"
           }
         }
       },
@@ -237,7 +240,8 @@
         "duration_and_time": "Choose either a duration or a time of day, not both.",
         "invalid_name": "Give the task type a name.",
         "already_exists": "A task type with this name already exists.",
-        "reserved_name": "That name is used by the built-in ad hoc reminders. Choose another."
+        "reserved_name": "That name is used by the built-in ad hoc reminders. Choose another.",
+        "invalid_icon": "The Companion app only knows Material Design icons: use one that starts with mdi:."
       },
       "abort": {
         "reconfigure_successful": "Task type updated."

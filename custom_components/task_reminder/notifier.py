@@ -17,6 +17,7 @@ from .const import (
     ACTION_SNOOZE,
     LIVE_ICON,
     LIVE_ICON_COLOR,
+    LIVE_TITLE,
     NOTIFICATION_TITLE,
     PANEL_URL,
 )
@@ -170,6 +171,7 @@ class Notifier:
         when: datetime,
         score: float,
         update: bool,
+        icon: str | None = None,
     ) -> int:
         """Show (or update, same tag) an iOS Live Activity that counts down to `when`. The phone
         counts by itself, so one push is enough. Phones only.
@@ -185,7 +187,7 @@ class Notifier:
             "chronometer": True,
             "when": int(when.timestamp()),
             "progress_bar_direction": "increasing",
-            "notification_icon": LIVE_ICON,
+            "notification_icon": icon or LIVE_ICON,
             "notification_icon_color": LIVE_ICON_COLOR,
             "relevance_score": score,
             "url": f"/{PANEL_URL}",
@@ -197,7 +199,7 @@ class Notifier:
                 (
                     s,
                     {
-                        "title": f"{NOTIFICATION_TITLE}: {title}",
+                        "title": f"{LIVE_TITLE}: {title}",
                         "message": message,
                         "data": dict(data),
                     },

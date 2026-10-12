@@ -39,7 +39,7 @@ async def test_a_timer_counts_down_on_the_lock_screen(hass, freezer, notify, mak
     task_id = await _remind(hass, due_in="00:20:00")
     (call,) = _live(notify["phone"])
     data = call.data["data"]
-    assert call.data["title"] == "Task Reminder: Egg timer"
+    assert call.data["title"] == "Task: Egg timer"
     assert call.data["message"] == "Due at 12:20"
     assert data["tag"].endswith("_live") and task_id in data["tag"]
     # real booleans and numbers: the app ignores them when they arrive as strings
@@ -131,3 +131,37 @@ async def test_the_sooner_one_takes_the_dynamic_island(hass, freezer, notify, ma
     await advance(hass, freezer, minutes=10)  # the sooner one is due: the other is first again
     promoted = next(c for c in reversed(_live(notify["phone"])) if later in c.data["data"]["tag"])
     assert promoted.data["data"]["relevance_score"] == 1.0
+
+
+async def test_a_task_type_can_have_its_own_icon(hass, notify, make_entry):
+    from .conftest import type_data
+
+    await make_entry(
+        type_data("washer", live_icon="mdi:washing-machine"),
+        type_data("dryer"),
+        live_activities=True,
+    )
+    for type_ in ("washer", "dryer"):
+        await hass.services.async_call(
+            DOMAIN, "start", {"type": type_, "due_in": "00:20:00"}, blocking=True
+        )
+    icons = {c.data["title"]: c.data["data"]["notification_icon"] for c in _live(notify["phone"])}
+    assert icons == {"Task: Washer": "mdi:washing-machine", "Task: Dryer": "mdi:bell-check"}
+
+
+async def test_the_icon_must_be_an_mdi_icon(hass, make_entry):
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.task_reminder.const import SUBENTRY_TYPE
+
+    entry = await make_entry()
+    flow = hass.config_entries.subentries
+    result = await flow.async_init((entry.entry_id, SUBENTRY_TYPE), context={"source": "user"})
+    base = {"name": "Washer", "snooze_minutes": "10, 5", "repeat_minutes": 5}
+    base["keeps_going_minutes"] = 2
+    bad = await flow.async_configure(result["flow_id"], {**base, "live_icon": "hass:washer"})
+    assert bad["type"] is FlowResultType.FORM and bad["errors"] == {"live_icon": "invalid_icon"}
+    good = await flow.async_configure(
+        result["flow_id"], {**base, "live_icon": "mdi:washing-machine"}
+    )
+    assert good["type"] is FlowResultType.CREATE_ENTRY

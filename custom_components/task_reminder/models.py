@@ -28,6 +28,7 @@ from .const import (
     CONF_GOOD_MOMENT_ENTITIES,
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
+    CONF_LIVE_ICON,
     CONF_NAME,
     CONF_QUIET_WITHOUT_FLAG,
     CONF_REPEAT_MINUTES,
@@ -77,6 +78,7 @@ class TaskType:
     then_start: str | None = None
     flag_entity: str | None = None
     sound: str | None = None
+    live_icon: str | None = None
     ring: bool = False
     ring_seconds: int | None = None
     start_tag: str | None = None
@@ -118,6 +120,7 @@ class TaskType:
             then_start=data.get(CONF_THEN_START) or None,
             flag_entity=data.get(CONF_FLAG_ENTITY) or None,
             sound=(data.get(CONF_SOUND) or "").strip() or None,
+            live_icon=(data.get(CONF_LIVE_ICON) or "").strip() or None,
             ring=bool(data.get(CONF_RING, False)),
             ring_seconds=int(data[CONF_RING_SECONDS]) if data.get(CONF_RING_SECONDS) else None,
             start_tag=data.get(CONF_START_TAG) or None,

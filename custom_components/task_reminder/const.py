@@ -26,6 +26,7 @@ CONF_RING_SWAP_SECONDS = "ring_swap_seconds"  # extra time per repeat: the swap 
 CONF_ROOM_PROVIDER = "room_provider"
 CONF_LIVE_ACTIVITIES = "live_activities"  # entity whose state is the area id of the room you are in
 CONF_NOTIFICATION_SOUND = "notification_sound"
+CONF_LIVE_ICON = "live_icon"  # per task type: icon of its countdown (an mdi: icon)
 CONF_SOUND = "sound"  # per task type, overrides the hub sound
 CONF_QUIET_START = "quiet_start"
 CONF_QUIET_END = "quiet_end"
@@ -151,6 +152,7 @@ PANEL_URL = "tasks"  # the sidebar panel: /tasks
 # The Live Activity icon is a Material Design Icons slug (the app takes no image): the closest to
 # our logo, a bell with a check, in the logo's orange.
 LIVE_ICON = "mdi:bell-check"
+LIVE_TITLE = "Task"  # short: the Dynamic Island and the lock screen have little room
 LIVE_ICON_COLOR = "#FF7A30"
 
 SIGNAL_UPDATE = f"{DOMAIN}_update"

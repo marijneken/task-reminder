@@ -39,6 +39,7 @@ from .const import (
     CONF_KEEPS_GOING_MINUTES,
     CONF_KEY,
     CONF_LIVE_ACTIVITIES,
+    CONF_LIVE_ICON,
     CONF_NAME,
     CONF_NOTIFICATION_SOUND,
     CONF_PAUSE_PLAYERS,
@@ -307,6 +308,7 @@ def _type_schema(other_types: dict[str, str]) -> vol.Schema:
         ),
         vol.Optional(CONF_COLLECTION_END_TIME): selector.TimeSelector(),
         vol.Optional(CONF_SOUND): _sound_selector(),
+        vol.Optional(CONF_LIVE_ICON): selector.IconSelector(),
         vol.Optional(CONF_RING, default=False): selector.BooleanSelector(),
         vol.Optional(CONF_RING_SECONDS): _number(5, 120, "s"),
         vol.Optional(CONF_START_ENTITY): entity,
@@ -359,6 +361,8 @@ class TaskTypeSubentryFlow(ConfigSubentryFlow):
             parse_minutes(user_input[CONF_SNOOZE_MINUTES])
         except ValueError:
             errors[CONF_SNOOZE_MINUTES] = "invalid_minutes"
+        if (icon := user_input.get(CONF_LIVE_ICON)) and not icon.startswith("mdi:"):
+            errors[CONF_LIVE_ICON] = "invalid_icon"  # the Companion app only knows mdi icons
         if user_input.get(CONF_DURATION_MINUTES) and user_input.get(CONF_DUE_TIME):
             errors[CONF_DUE_TIME] = "duration_and_time"
         return errors

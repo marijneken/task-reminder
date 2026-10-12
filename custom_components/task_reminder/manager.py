@@ -535,6 +535,7 @@ class TaskManager:
                 when=target,
                 score=score,
                 update=bool(shown),
+                icon=task_type.live_icon if (task_type := self._type_of(task)) else None,
             ):
                 task.extra["live"] = target.isoformat()
                 task.extra["live_score"] = score
