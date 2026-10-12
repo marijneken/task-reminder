@@ -5,33 +5,30 @@
         "title": "Task Reminder",
         "description": "Choose your person, then who gets reminders and how.",
         "data": {
-          "person": "Person",
-          "live_activities": "Countdown on the lock screen (iPhone)",
-          "pause_players": "Pause these media players",
-          "turn_off_players": "Turn these off as a last resort",
-          "room_provider": "Room presence provider"
+          "person": "Person"
         },
         "data_description": {
-          "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
-          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
-          "turn_off_players": "Typically your TV (the Apple TV; a TV that follows it, like the LG, turns off with it). When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if they are on, whether playing, paused or idle. Never while silencing is active.",
-          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area) and which lights flash when a reminder keeps going (the lights of that area). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces and no lights flash."
+          "person": "The person whose location says whether you are home. While they are away, reminders do not nag: you get one quiet note, and the real reminder follows when they arrive home. Unknown or unavailable counts as home, so a broken phone never silences a reminder."
         },
         "sections": {
           "notifications": {
             "name": "Notifications",
             "description": "Who gets a reminder, in the order they join: the phone first, Alexa from the second reminder, other devices and the TV from the third.",
             "data": {
+              "live_activities": "Countdown on the lock screen (iPhone)",
               "phone_services": "Phone notify services",
               "extra_services": "Other devices notify services",
               "tv_services": "TV notify services (toast)",
-              "alexa_speakers": "Alexa speakers"
+              "alexa_speakers": "Alexa speakers",
+              "room_provider": "Room presence provider"
             },
             "data_description": {
+              "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
               "phone_services": "Notify services of your phone. It gets every reminder from the first, with the Done, Snooze and Dismiss buttons, a critical alert once a reminder keeps going, and it is the only device that rings.",
               "extra_services": "Notify services of other Companion app devices, like an iPad or a Mac. They get the same notification as the phone, but only from the third reminder on, with the other devices. Not a TV: a TV cannot show buttons, so put it under TV notify services.",
               "tv_services": "Notify services of a TV, e.g. the LG webOS one. From the third reminder on (with the other devices) the TV shows a short toast with the same text, and shows it again whenever a ringing reminder repeats. Put the TV here and not under Other devices: a TV cannot show buttons, and it would show the word clear_notification. A TV that is off is simply skipped.",
-              "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters."
+              "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters.",
+              "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area) and which lights flash when a reminder keeps going (the lights of that area). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces and no lights flash."
             }
           },
           "sound_ringing": {
@@ -48,6 +45,18 @@
               "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
               "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
               "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again."
+            }
+          },
+          "actions": {
+            "name": "Actions",
+            "description": "What happens to media players when a reminder reaches the other devices, and as a last resort.",
+            "data": {
+              "pause_players": "Pause these media players",
+              "turn_off_players": "Turn these off as a last resort"
+            },
+            "data_description": {
+              "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
+              "turn_off_players": "Typically your TV (the Apple TV; a TV that follows it, like the LG, turns off with it). When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if they are on, whether playing, paused or idle. Never while silencing is active."
             }
           },
           "quiet_hours": {
@@ -74,33 +83,30 @@
         "title": "Task Reminder",
         "description": "Choose your person, then who gets reminders and how.",
         "data": {
-          "person": "Person",
-          "live_activities": "Countdown on the lock screen (iPhone)",
-          "pause_players": "Pause these media players",
-          "turn_off_players": "Turn these off as a last resort",
-          "room_provider": "Room presence provider"
+          "person": "Person"
         },
         "data_description": {
-          "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
-          "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
-          "turn_off_players": "Typically your TV (the Apple TV; a TV that follows it, like the LG, turns off with it). When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if they are on, whether playing, paused or idle. Never while silencing is active.",
-          "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area) and which lights flash when a reminder keeps going (the lights of that area). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces and no lights flash."
+          "person": "The person whose location says whether you are home. While they are away, reminders do not nag: you get one quiet note, and the real reminder follows when they arrive home. Unknown or unavailable counts as home, so a broken phone never silences a reminder."
         },
         "sections": {
           "notifications": {
             "name": "Notifications",
             "description": "Who gets a reminder, in the order they join: the phone first, Alexa from the second reminder, other devices and the TV from the third.",
             "data": {
+              "live_activities": "Countdown on the lock screen (iPhone)",
               "phone_services": "Phone notify services",
               "extra_services": "Other devices notify services",
               "tv_services": "TV notify services (toast)",
-              "alexa_speakers": "Alexa speakers"
+              "alexa_speakers": "Alexa speakers",
+              "room_provider": "Room presence provider"
             },
             "data_description": {
+              "live_activities": "Shows a Live Activity (lock screen and Dynamic Island) that counts down to what is coming up: a timer, a task waiting for its due time or a snooze, for the last 7 hours before. It ends when the reminder arrives or the task ends. Needs a recent Companion app and iOS (see the Companion app documentation on Live Activities), and an older app shows a plain notification instead, so leave it off until you have tried it. Not shown during silencing, quiet hours or while away.",
               "phone_services": "Notify services of your phone. It gets every reminder from the first, with the Done, Snooze and Dismiss buttons, a critical alert once a reminder keeps going, and it is the only device that rings.",
               "extra_services": "Notify services of other Companion app devices, like an iPad or a Mac. They get the same notification as the phone, but only from the third reminder on, with the other devices. Not a TV: a TV cannot show buttons, so put it under TV notify services.",
               "tv_services": "Notify services of a TV, e.g. the LG webOS one. From the third reminder on (with the other devices) the TV shows a short toast with the same text, and shows it again whenever a ringing reminder repeats. Put the TV here and not under Other devices: a TV cannot show buttons, and it would show the word clear_notification. A TV that is off is simply skipped.",
-              "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters."
+              "alexa_speakers": "Your Echo speakers (Alexa Media Player). Put each one in its area in Home Assistant: the speaker in the area you are in announces first, the others join when a reminder reaches everyone. No naming rules, the area is all that matters.",
+              "room_provider": "An entity whose state is the id of the area you are in (from your presence system). It decides which Alexa speaks first (the speakers in that area) and which lights flash when a reminder keeps going (the lights of that area). If it is not set, unknown or unavailable, or names no area, your place is unknown: every Alexa announces and no lights flash."
             }
           },
           "sound_ringing": {
@@ -117,6 +123,18 @@
               "ring_seconds": "For tasks and reminders that ring: how often the sound is triggered again, about the length of your sound plus a second or two (an iPhone plays at most 30 seconds of a custom sound).",
               "ring_swap_seconds": "Added to the ring interval for the second and later repeats: sending the new notification and removing the old one takes a moment, so those sounds would start too early. About 1.5; adjust until the repeats follow the sound without a gap or overlap.",
               "ring_minutes": "One reminder stops ringing after this long; the next regular reminder rings again."
+            }
+          },
+          "actions": {
+            "name": "Actions",
+            "description": "What happens to media players when a reminder reaches the other devices, and as a last resort.",
+            "data": {
+              "pause_players": "Pause these media players",
+              "turn_off_players": "Turn these off as a last resort"
+            },
+            "data_description": {
+              "pause_players": "Whatever is playing on them is paused when a reminder reaches the other devices, and resumed when the task ends.",
+              "turn_off_players": "Typically your TV (the Apple TV; a TV that follows it, like the LG, turns off with it). When a reminder keeps going (snoozes used up and the second keeps-going reminder is sent), these are turned off if they are on, whether playing, paused or idle. Never while silencing is active."
             }
           },
           "quiet_hours": {

@@ -124,10 +124,12 @@ def _notify_selector(hass: HomeAssistant) -> selector.SelectSelector:
 # The hub form groups its fields in sections; what is stored stays one flat dict.
 _SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     "notifications": (
+        CONF_LIVE_ACTIVITIES,
         CONF_PHONE_SERVICES,
         CONF_EXTRA_SERVICES,
         CONF_TV_SERVICES,
         CONF_ALEXA_SPEAKERS,
+        CONF_ROOM_PROVIDER,
     ),
     "sound_ringing": (
         CONF_NOTIFICATION_SOUND,
@@ -135,16 +137,10 @@ _SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         CONF_RING_SWAP_SECONDS,
         CONF_RING_MINUTES,
     ),
+    "actions": (CONF_PAUSE_PLAYERS, CONF_TURN_OFF_PLAYERS),
     "quiet_hours": (CONF_QUIET_START, CONF_QUIET_END),
 }
-_HUB_KEYS = (
-    CONF_PERSON,
-    CONF_LIVE_ACTIVITIES,
-    *(key for fields in _SECTION_FIELDS.values() for key in fields),
-    CONF_PAUSE_PLAYERS,
-    CONF_TURN_OFF_PLAYERS,
-    CONF_ROOM_PROVIDER,
-)
+_HUB_KEYS = (CONF_PERSON, *(key for fields in _SECTION_FIELDS.values() for key in fields))
 
 
 def _flatten(user_input: dict[str, Any]) -> dict[str, Any]:
@@ -176,10 +172,12 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
             vol.Required(CONF_PERSON): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="person")
             ),
-            vol.Optional(CONF_LIVE_ACTIVITIES, default=False): selector.BooleanSelector(),
             vol.Required("notifications"): section(
                 vol.Schema(
                     {
+                        vol.Optional(
+                            CONF_LIVE_ACTIVITIES, default=False
+                        ): selector.BooleanSelector(),
                         vol.Optional(CONF_PHONE_SERVICES, default=[]): notify,
                         vol.Optional(CONF_EXTRA_SERVICES, default=[]): notify,
                         vol.Optional(CONF_TV_SERVICES, default=[]): notify,
@@ -188,6 +186,7 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                                 domain="media_player", integration="alexa_media", multiple=True
                             )
                         ),
+                        vol.Optional(CONF_ROOM_PROVIDER): selector.EntitySelector(),
                     }
                 ),
                 {"collapsed": False},
@@ -209,6 +208,15 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 ),
                 {"collapsed": False},
             ),
+            vol.Required("actions"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(CONF_PAUSE_PLAYERS, default=[]): players,
+                        vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): players,
+                    }
+                ),
+                {"collapsed": False},
+            ),
             vol.Required("quiet_hours"): section(
                 vol.Schema(
                     {
@@ -222,9 +230,6 @@ def _hub_schema(hass: HomeAssistant) -> vol.Schema:
                 ),
                 {"collapsed": False},
             ),
-            vol.Optional(CONF_PAUSE_PLAYERS, default=[]): players,
-            vol.Optional(CONF_TURN_OFF_PLAYERS, default=[]): players,
-            vol.Optional(CONF_ROOM_PROVIDER): selector.EntitySelector(),
         }
     )
 

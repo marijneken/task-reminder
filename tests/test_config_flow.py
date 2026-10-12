@@ -161,26 +161,25 @@ async def test_entities(hass: HomeAssistant, freezer, make_entry) -> None:
 
 async def test_the_hub_form_is_grouped_in_sections(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
-    keys = [str(key) for key in result["data_schema"].schema]
-    assert keys == [
+    schema = result["data_schema"].schema
+    assert [str(key) for key in schema] == [
         "person",
-        "live_activities",
         "notifications",
         "sound_ringing",
+        "actions",
         "quiet_hours",
-        "pause_players",
-        "turn_off_players",
-        "room_provider",
     ]
     inner = {
-        name: [str(k) for k in result["data_schema"].schema[name].schema.schema]
-        for name in ("notifications", "sound_ringing", "quiet_hours")
+        name: [str(k) for k in schema[name].schema.schema]
+        for name in ("notifications", "sound_ringing", "actions", "quiet_hours")
     }
     assert inner["notifications"] == [
+        "live_activities",
         "phone_services",
         "extra_services",
         "tv_services",
         "alexa_speakers",
+        "room_provider",
     ]
     assert inner["sound_ringing"] == [
         "notification_sound",
@@ -188,6 +187,7 @@ async def test_the_hub_form_is_grouped_in_sections(hass: HomeAssistant) -> None:
         "ring_swap_seconds",
         "ring_minutes",
     ]
+    assert inner["actions"] == ["pause_players", "turn_off_players"]
     assert inner["quiet_hours"] == ["quiet_start", "quiet_end"]
 
 
@@ -195,11 +195,13 @@ async def test_the_options_form_shows_the_stored_values(hass: HomeAssistant, mak
     entry = await make_entry(room_provider="sensor.room", ring_seconds=20)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     schema = result["data_schema"].schema
-    assert {str(k): k.description for k in schema}["room_provider"] == {
-        "suggested_value": "sensor.room"
-    }
-    inner = next(v for k, v in schema.items() if str(k) == "sound_ringing").schema.schema
-    assert {str(k): k.description for k in inner}["ring_seconds"] == {"suggested_value": 20}
+
+    def suggested(section_name: str) -> dict:
+        inner = next(v for k, v in schema.items() if str(k) == section_name).schema.schema
+        return {str(k): k.description for k in inner}
+
+    assert suggested("notifications")["room_provider"] == {"suggested_value": "sensor.room"}
+    assert suggested("sound_ringing")["ring_seconds"] == {"suggested_value": 20}
 
 
 async def test_clearing_a_setting_in_the_options_really_clears_it(hass, make_entry) -> None:
@@ -225,7 +227,7 @@ async def test_the_hub_form_can_be_sent_to_the_frontend(hass: HomeAssistant) -> 
         result["data_schema"], custom_serializer=cv.custom_serializer
     )
     sections = {f["name"]: f for f in fields if f.get("type") == "expandable"}
-    assert set(sections) == {"notifications", "sound_ringing", "quiet_hours"}
+    assert set(sections) == {"notifications", "sound_ringing", "actions", "quiet_hours"}
     assert [f["name"] for f in sections["sound_ringing"]["schema"]][:3] == [
         "notification_sound",
         "ring_seconds",
